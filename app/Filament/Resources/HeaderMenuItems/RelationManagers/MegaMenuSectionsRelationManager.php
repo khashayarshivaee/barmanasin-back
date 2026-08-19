@@ -243,7 +243,10 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                                     ->visibility('public')
                                                     ->imagePreviewHeight('120')
                                                     ->maxSize(2048)
-                                                    ->preventFilePathTampering(),
+                                                    ->preventFilePathTampering(
+                                                        allowFilePathUsing: fn (string $file): bool =>
+                                                        str_starts_with($file, 'header/mega-menu/icons/'),
+                                                    ),
 
                                                 Grid::make(1)
                                                     ->schema([
