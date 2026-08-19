@@ -13,7 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-
+use App\Filament\Resources\HeaderMenuItems\RelationManagers\MegaMenuSectionsRelationManager;
 class HeaderMenuItemResource extends Resource
 {
     protected static ?string $model = HeaderMenuItem::class;
@@ -45,7 +45,7 @@ class HeaderMenuItemResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            MegaMenuSectionsRelationManager::class,
         ];
     }
 

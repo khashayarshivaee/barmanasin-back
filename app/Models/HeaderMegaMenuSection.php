@@ -4,17 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
+    'header_menu_item_id',
     'title_en',
     'title_fa',
-    'path',
-    'type',
     'sort_order',
     'is_active',
 ])]
-class HeaderMenuItem extends Model
+class HeaderMegaMenuSection extends Model
 {
     protected function casts(): array
     {
@@ -24,11 +24,19 @@ class HeaderMenuItem extends Model
         ];
     }
 
-    public function megaMenuSections(): HasMany
+    public function menuItem(): BelongsTo
+    {
+        return $this->belongsTo(
+            HeaderMenuItem::class,
+            'header_menu_item_id',
+        );
+    }
+
+    public function links(): HasMany
     {
         return $this->hasMany(
-            HeaderMegaMenuSection::class,
-            'header_menu_item_id',
+            HeaderMegaMenuLink::class,
+            'header_mega_menu_section_id',
         );
     }
 }
