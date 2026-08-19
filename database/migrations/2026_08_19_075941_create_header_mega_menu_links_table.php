@@ -44,11 +44,14 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index([
-                'header_mega_menu_section_id',
-                'is_active',
-                'sort_order',
-            ]);
+            $table->index(
+                [
+                    'header_mega_menu_section_id',
+                    'is_active',
+                    'sort_order',
+                ],
+                'mega_links_section_active_order_idx',
+            );
         });
     }
 

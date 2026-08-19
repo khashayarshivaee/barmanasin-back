@@ -29,11 +29,14 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index([
-                'header_menu_item_id',
-                'is_active',
-                'sort_order',
-            ]);
+            $table->index(
+                [
+                    'header_menu_item_id',
+                    'is_active',
+                    'sort_order',
+                ],
+                'mega_sections_menu_active_order_idx',
+            );
         });
     }
 
