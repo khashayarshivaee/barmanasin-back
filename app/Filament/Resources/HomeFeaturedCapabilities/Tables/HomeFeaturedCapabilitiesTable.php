@@ -29,10 +29,6 @@ class HomeFeaturedCapabilitiesTable
                     )
                     ->limit(80),
 
-                TextColumn::make('capability.focus_points_count')
-                    ->label('Focus Points')
-                    ->counts('capability.focusPoints'),
-
                 TextColumn::make('capability.status')
                     ->label('Status')
                     ->badge()
@@ -42,10 +38,20 @@ class HomeFeaturedCapabilitiesTable
                             Capability::STATUS_ARCHIVED => 'gray',
                             default => 'warning',
                         }
+                    )
+                    ->formatStateUsing(
+                        fn (?string $state): string =>
+                        $state ? ucfirst($state) : 'Unknown'
                     ),
 
                 ToggleColumn::make('is_active')
                     ->label('Featured'),
+
+                TextColumn::make('updated_at')
+                    ->label('Updated')
+                    ->dateTime('M j, Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
