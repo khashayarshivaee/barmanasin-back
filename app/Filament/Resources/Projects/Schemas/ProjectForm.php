@@ -135,6 +135,18 @@ class ProjectForm
                         DateTimePicker::make('published_at')
                             ->label('Published At')
                             ->seconds(false)
+                            ->timezone('Asia/Tehran')
+                            ->required(
+                                fn (Get $get): bool =>
+                                    $get('status') === Project::STATUS_PUBLISHED
+                            )
+                            ->visible(
+                                fn (Get $get): bool =>
+                                    $get('status') === Project::STATUS_PUBLISHED
+                            )
+                            ->helperText(
+                                'Time is shown in Tehran timezone.'
+                            )
                             ->required(
                                 fn (Get $get): bool =>
                                     $get('status') === Project::STATUS_PUBLISHED
