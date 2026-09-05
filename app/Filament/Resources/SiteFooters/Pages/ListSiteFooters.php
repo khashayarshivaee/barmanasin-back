@@ -8,12 +8,15 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListSiteFooters extends ListRecords
 {
-    protected static string $resource = SiteFooterResource::class;
+    protected static string $resource =
+        SiteFooterResource::class;
+
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Create Footer'),
         ];
     }
 }

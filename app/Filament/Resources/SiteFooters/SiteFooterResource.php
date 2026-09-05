@@ -18,57 +18,39 @@ use UnitEnum;
 
 class SiteFooterResource extends Resource
 {
-    protected static ?string $model =
-        SiteFooter::class;
-
+    protected static ?string $model = SiteFooter::class;
 
     protected static string|BackedEnum|null $navigationIcon =
         Heroicon::OutlinedRectangleGroup;
 
-
     protected static string|UnitEnum|null $navigationGroup =
         'Website';
-
 
     protected static ?string $navigationLabel =
         'Footer';
 
-
     protected static ?string $modelLabel =
         'Footer';
-
 
     protected static ?string $pluralModelLabel =
         'Footer';
 
-
     protected static ?string $recordTitleAttribute =
         'copyright_en';
-
 
     protected static ?int $navigationSort =
         40;
 
 
-    public static function form(
-        Schema $schema,
-    ): Schema {
-
-        return SiteFooterForm::configure(
-            $schema
-        );
-
+    public static function form(Schema $schema): Schema
+    {
+        return SiteFooterForm::configure($schema);
     }
 
 
-    public static function table(
-        Table $table,
-    ): Table {
-
-        return SiteFootersTable::configure(
-            $table
-        );
-
+    public static function table(Table $table): Table
+    {
+        return SiteFootersTable::configure($table);
     }
 
 

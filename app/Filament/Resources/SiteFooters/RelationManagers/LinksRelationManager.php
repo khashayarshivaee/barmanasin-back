@@ -9,6 +9,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -26,48 +27,66 @@ class LinksRelationManager extends RelationManager
         return $schema
             ->components([
 
-                Select::make('group')
-                    ->label('Group')
-                    ->options([
-                        'services' => 'Services',
-                        'about' => 'About',
-                        'social' => 'Social',
+                Section::make('Link Content')
+                    ->schema([
+
+                        TextInput::make('title_en')
+                            ->label('Title EN')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('title_fa')
+                            ->label('Title FA')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('url')
+                            ->label('URL / Path')
+                            ->placeholder('/about or https://example.com')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
                     ])
-                    ->required()
-                    ->native(false),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
-                TextInput::make('title_en')
-                    ->label('Title EN')
-                    ->required()
-                    ->maxLength(255),
 
-                TextInput::make('title_fa')
-                    ->label('Title FA')
-                    ->required()
-                    ->maxLength(255),
+                Section::make('Settings')
+                    ->schema([
 
-                TextInput::make('url')
-                    ->label('URL / Path')
-                    ->required()
-                    ->maxLength(255),
+                        Select::make('group')
+                            ->label('Group')
+                            ->options([
+                                'services' => 'Services',
+                                'about' => 'About',
+                                'social' => 'Social',
+                            ])
+                            ->required()
+                            ->native(false),
 
-                TextInput::make('sort_order')
-                    ->label('Sort Order')
-                    ->numeric()
-                    ->default(
-                        fn (): int =>
-                            (
-                                $this
-                                    ->getOwnerRecord()
-                                    ->links()
-                                    ->max('sort_order') ?? 0
-                            ) + 1
-                    )
-                    ->required(),
+                        TextInput::make('sort_order')
+                            ->label('Sort Order')
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(
+                                fn (): int =>
+                                    (
+                                        $this
+                                            ->getOwnerRecord()
+                                            ->links()
+                                            ->max('sort_order') ?? 0
+                                    ) + 1
+                            )
+                            ->required(),
 
-                Toggle::make('is_active')
-                    ->label('Active')
-                    ->default(true),
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true),
+
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
 
             ]);
     }
@@ -104,15 +123,29 @@ class LinksRelationManager extends RelationManager
                             'social' => 'Social',
                             default => ucfirst($state),
                         }
+                    )
+                    ->color(
+                        fn (string $state): string =>
+                        match ($state) {
+                            'services' => 'info',
+                            'about' => 'gray',
+                            'social' => 'warning',
+                            default => 'gray',
+                        }
                     ),
 
                 TextColumn::make('title_en')
                     ->label('Title')
-                    ->searchable(),
+                    ->searchable()
+                    ->limit(50),
 
                 TextColumn::make('url')
-                    ->label('URL')
-                    ->limit(40),
+                    ->label('URL / Path')
+                    ->limit(45)
+                    ->tooltip(
+                        fn ($state): ?string =>
+                        $state ?: null
+                    ),
 
                 IconColumn::make('is_active')
                     ->label('Active')

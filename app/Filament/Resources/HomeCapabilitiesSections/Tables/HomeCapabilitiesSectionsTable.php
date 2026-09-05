@@ -13,17 +13,22 @@ class HomeCapabilitiesSectionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('eyebrow_en')
-                    ->label('Eyebrow')
-                    ->placeholder('—'),
 
                 TextColumn::make('title_en')
                     ->label('Title')
                     ->weight('medium')
-                    ->wrap(),
+                    ->searchable()
+                    ->limit(60)
+                    ->placeholder('—'),
+
+                TextColumn::make('eyebrow_en')
+                    ->label('Eyebrow')
+                    ->limit(30)
+                    ->placeholder('—'),
 
                 TextColumn::make('cta_title_en')
                     ->label('CTA')
+                    ->limit(35)
                     ->placeholder('—'),
 
                 IconColumn::make('is_active')
@@ -32,11 +37,16 @@ class HomeCapabilitiesSectionsTable
 
                 TextColumn::make('updated_at')
                     ->label('Updated')
-                    ->dateTime('M j, Y H:i')
+                    ->dateTime('M j, Y — H:i')
                     ->sortable(),
+
             ])
             ->recordActions([
                 EditAction::make(),
-            ]);
+            ])
+            ->defaultSort(
+                'updated_at',
+                'desc'
+            );
     }
 }

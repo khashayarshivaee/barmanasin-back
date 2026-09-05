@@ -13,14 +13,17 @@ class HomeImageShowcaseSectionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('eyebrow_en')
-                    ->label('Eyebrow')
-                    ->searchable(),
 
                 TextColumn::make('title_en')
                     ->label('Title')
                     ->searchable()
-                    ->limit(50),
+                    ->limit(55)
+                    ->placeholder('—'),
+
+                TextColumn::make('slides_count')
+                    ->label('Slides')
+                    ->counts('slides')
+                    ->badge(),
 
                 IconColumn::make('is_active')
                     ->label('Active')
@@ -28,12 +31,16 @@ class HomeImageShowcaseSectionsTable
 
                 TextColumn::make('updated_at')
                     ->label('Updated')
-                    ->dateTime()
+                    ->dateTime('M j, Y — H:i')
                     ->sortable(),
+
             ])
             ->recordActions([
                 EditAction::make(),
             ])
-            ->defaultSort('updated_at', 'desc');
+            ->defaultSort(
+                'updated_at',
+                'desc'
+            );
     }
 }

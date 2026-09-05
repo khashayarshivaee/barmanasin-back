@@ -15,7 +15,8 @@ use UnitEnum;
 
 class ContactInquiryResource extends Resource
 {
-    protected static ?string $model = ContactInquiry::class;
+    protected static ?string $model =
+        ContactInquiry::class;
 
     protected static string|BackedEnum|null $navigationIcon =
         Heroicon::OutlinedEnvelope;
@@ -51,16 +52,11 @@ class ContactInquiryResource extends Resource
     }
 
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
-
-
     public static function getPages(): array
     {
         return [
-            'index' => ManageContactInquiries::route('/'),
+            'index' =>
+                ManageContactInquiries::route('/'),
         ];
     }
 
@@ -69,6 +65,7 @@ class ContactInquiryResource extends Resource
     {
         return false;
     }
+
 
     public static function getNavigationBadge(): ?string
     {

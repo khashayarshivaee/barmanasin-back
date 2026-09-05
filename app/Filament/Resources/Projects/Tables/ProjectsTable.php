@@ -9,6 +9,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class ProjectsTable
 {
@@ -16,6 +17,7 @@ class ProjectsTable
     {
         return $table
             ->columns([
+
                 ImageColumn::make('cover_image_path')
                     ->label('Cover')
                     ->disk('public')
@@ -28,61 +30,92 @@ class ProjectsTable
                     ->searchable()
                     ->sortable()
                     ->weight('medium')
+                    ->limit(60)
+                    ->placeholder('—')
                     ->description(
-                        fn (Project $record): ?string => $record->location_en
+                        fn (Project $record): ?string =>
+                        $record->location_en
+                            ? Str::limit(
+                            $record->location_en,
+                            60
+                        )
+                            : null
                     ),
 
                 TextColumn::make('category.name_en')
                     ->label('Category')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('—'),
 
                 TextColumn::make('year')
                     ->label('Year')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
 
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        Project::STATUS_PUBLISHED => 'success',
-                        Project::STATUS_ARCHIVED => 'gray',
-                        default => 'warning',
-                    })
+                    ->color(
+                        fn (string $state): string =>
+                        match ($state) {
+                            Project::STATUS_PUBLISHED => 'success',
+                            Project::STATUS_ARCHIVED => 'gray',
+                            default => 'warning',
+                        }
+                    )
                     ->formatStateUsing(
-                        fn (string $state): string => ucfirst($state)
+                        fn (string $state): string =>
+                        ucfirst($state)
                     ),
 
                 TextColumn::make('published_at')
                     ->label('Published')
-                    ->dateTime('M j, Y H:i')
+                    ->dateTime('M j, Y — H:i')
+                    ->timezone('Asia/Tehran')
                     ->sortable()
                     ->placeholder('—'),
 
                 TextColumn::make('updated_at')
                     ->label('Updated')
-                    ->dateTime('M j, Y H:i')
+                    ->dateTime('M j, Y — H:i')
+                    ->timezone('Asia/Tehran')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(
+                        isToggledHiddenByDefault: true
+                    ),
+
             ])
+
             ->filters([
+
                 SelectFilter::make('project_category_id')
                     ->label('Category')
-                    ->relationship('category', 'name_en')
+                    ->relationship(
+                        'category',
+                        'name_en'
+                    )
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
                         Project::STATUS_DRAFT => 'Draft',
                         Project::STATUS_PUBLISHED => 'Published',
                         Project::STATUS_ARCHIVED => 'Archived',
                     ]),
+
             ])
-            ->defaultSort('updated_at', 'desc')
+
             ->recordActions([
                 EditAction::make(),
-
                 DeleteAction::make(),
-            ]);
+            ])
+
+            ->defaultSort(
+                'updated_at',
+                'desc'
+            );
     }
 }

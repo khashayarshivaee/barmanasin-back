@@ -8,12 +8,15 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditHeaderMenuItem extends EditRecord
 {
-    protected static string $resource = HeaderMenuItemResource::class;
+    protected static string $resource =
+        HeaderMenuItemResource::class;
+
 
     public function getHeading(): string
     {
         return 'Edit Menu Item';
     }
+
 
     public function getSubheading(): ?string
     {
@@ -31,6 +34,7 @@ class EditHeaderMenuItem extends EditRecord
 
         return "{$englishTitle} · {$persianTitle}";
     }
+
 
     protected function getHeaderActions(): array
     {

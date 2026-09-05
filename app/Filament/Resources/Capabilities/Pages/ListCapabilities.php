@@ -8,7 +8,9 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListCapabilities extends ListRecords
 {
-    protected static string $resource = CapabilityResource::class;
+    protected static string $resource =
+        CapabilityResource::class;
+
 
     protected function getHeaderActions(): array
     {

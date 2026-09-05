@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\HomeCapabilitiesSections\Schemas;
 
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -14,11 +14,19 @@ class HomeCapabilitiesSectionForm
     {
         return $schema
             ->components([
+
+                /*
+                |--------------------------------------------------------------------------
+                | Section Content
+                |--------------------------------------------------------------------------
+                */
+
                 Section::make('Section Content')
                     ->description(
                         'Content displayed above the Capabilities section on the Home page.'
                     )
                     ->schema([
+
                         TextInput::make('eyebrow_en')
                             ->label('Eyebrow — English')
                             ->maxLength(255)
@@ -41,18 +49,33 @@ class HomeCapabilitiesSectionForm
 
                         Textarea::make('description_en')
                             ->label('Description — English')
-                            ->rows(4)
-                            ->maxLength(1500),
+                            ->rows(5)
+                            ->maxLength(1500)
+                            ->columnSpanFull(),
 
                         Textarea::make('description_fa')
                             ->label('Description — Persian')
-                            ->rows(4)
-                            ->maxLength(1500),
+                            ->rows(5)
+                            ->maxLength(1500)
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Call to Action
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Call to Action')
+                    ->description(
+                        'Optional link displayed within the Capabilities section.'
+                    )
                     ->schema([
+
                         TextInput::make('cta_title_en')
                             ->label('CTA Title — English')
                             ->maxLength(255)
@@ -69,19 +92,33 @@ class HomeCapabilitiesSectionForm
                             ->placeholder('/capabilities')
                             ->helperText(
                                 'Internal frontend path. Example: /capabilities'
-                            ),
+                            )
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Visibility
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Visibility')
                     ->schema([
+
                         Toggle::make('is_active')
                             ->label('Section Active')
                             ->default(true)
                             ->helperText(
                                 'Turn this off to hide the entire Capabilities section from the public API.'
                             ),
-                    ]),
+
+                    ])
+                    ->columnSpanFull(),
+
             ]);
     }
 }

@@ -14,41 +14,73 @@ class HomeContactSectionForm
     {
         return $schema
             ->components([
+
+                /*
+                |--------------------------------------------------------------------------
+                | Section Content
+                |--------------------------------------------------------------------------
+                */
+
                 Section::make('Section Content')
+                    ->description(
+                        'Content displayed in the contact call-to-action section on the Home page.'
+                    )
                     ->schema([
+
                         TextInput::make('eyebrow_en')
-                            ->label('Eyebrow EN')
+                            ->label('Eyebrow — English')
                             ->maxLength(255),
 
                         TextInput::make('eyebrow_fa')
-                            ->label('Eyebrow FA')
+                            ->label('Eyebrow — Persian')
                             ->maxLength(255),
 
                         TextInput::make('title_en')
-                            ->label('Title EN')
+                            ->label('Title — English')
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('title_fa')
-                            ->label('Title FA')
+                            ->label('Title — Persian')
                             ->required()
                             ->maxLength(255),
 
                         Textarea::make('description_en')
-                            ->label('Description EN')
-                            ->rows(4),
+                            ->label('Description — English')
+                            ->rows(5)
+                            ->maxLength(2000)
+                            ->columnSpanFull(),
 
                         Textarea::make('description_fa')
-                            ->label('Description FA')
-                            ->rows(4),
+                            ->label('Description — Persian')
+                            ->rows(5)
+                            ->maxLength(2000)
+                            ->columnSpanFull(),
+
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Call to Action
+                |--------------------------------------------------------------------------
+                */
+
+                Section::make('Call to Action')
+                    ->description(
+                        'Button text and destination used in the Home contact section.'
+                    )
+                    ->schema([
 
                         TextInput::make('cta_label_en')
-                            ->label('CTA Label EN')
+                            ->label('CTA Label — English')
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('cta_label_fa')
-                            ->label('CTA Label FA')
+                            ->label('CTA Label — Persian')
                             ->required()
                             ->maxLength(255),
 
@@ -56,16 +88,37 @@ class HomeContactSectionForm
                             ->label('CTA Path')
                             ->required()
                             ->default('/contact')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->placeholder('/contact')
+                            ->helperText(
+                                'Internal frontend path. Example: /contact'
+                            )
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Visibility
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Visibility')
                     ->schema([
+
                         Toggle::make('is_active')
-                            ->label('Active')
-                            ->default(true),
-                    ]),
+                            ->label('Section Active')
+                            ->default(true)
+                            ->helperText(
+                                'Turn this off to hide the Home contact section from the public API.'
+                            ),
+
+                    ])
+                    ->columnSpanFull(),
+
             ]);
     }
 }

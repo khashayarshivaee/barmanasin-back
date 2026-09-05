@@ -5,6 +5,7 @@ namespace App\Filament\Resources\HomeImageShowcaseSections;
 use App\Filament\Resources\HomeImageShowcaseSections\Pages\CreateHomeImageShowcaseSection;
 use App\Filament\Resources\HomeImageShowcaseSections\Pages\EditHomeImageShowcaseSection;
 use App\Filament\Resources\HomeImageShowcaseSections\Pages\ListHomeImageShowcaseSections;
+use App\Filament\Resources\HomeImageShowcaseSections\RelationManagers\SlidesRelationManager;
 use App\Filament\Resources\HomeImageShowcaseSections\Schemas\HomeImageShowcaseSectionForm;
 use App\Filament\Resources\HomeImageShowcaseSections\Tables\HomeImageShowcaseSectionsTable;
 use App\Models\HomeImageShowcaseSection;
@@ -14,11 +15,11 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
-use App\Filament\Resources\HomeImageShowcaseSections\RelationManagers\SlidesRelationManager;
 
 class HomeImageShowcaseSectionResource extends Resource
 {
-    protected static ?string $model = HomeImageShowcaseSection::class;
+    protected static ?string $model =
+        HomeImageShowcaseSection::class;
 
     protected static string|BackedEnum|null $navigationIcon =
         Heroicon::OutlinedPhoto;
@@ -35,21 +36,24 @@ class HomeImageShowcaseSectionResource extends Resource
     protected static ?string $pluralModelLabel =
         'Image Showcase';
 
+    protected static ?string $recordTitleAttribute =
+        'title_en';
+
     protected static ?int $navigationSort =
         50;
 
-    protected static ?string $recordTitleAttribute =
-        'title_en';
 
     public static function form(Schema $schema): Schema
     {
         return HomeImageShowcaseSectionForm::configure($schema);
     }
 
+
     public static function table(Table $table): Table
     {
         return HomeImageShowcaseSectionsTable::configure($table);
     }
+
 
     public static function getRelations(): array
     {
@@ -58,14 +62,21 @@ class HomeImageShowcaseSectionResource extends Resource
         ];
     }
 
+
     public static function getPages(): array
     {
         return [
-            'index' => ListHomeImageShowcaseSections::route('/'),
-            'create' => CreateHomeImageShowcaseSection::route('/create'),
-            'edit' => EditHomeImageShowcaseSection::route('/{record}/edit'),
+            'index' =>
+                ListHomeImageShowcaseSections::route('/'),
+
+            'create' =>
+                CreateHomeImageShowcaseSection::route('/create'),
+
+            'edit' =>
+                EditHomeImageShowcaseSection::route('/{record}/edit'),
         ];
     }
+
 
     public static function canCreate(): bool
     {

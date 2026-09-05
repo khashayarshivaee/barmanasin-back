@@ -13,17 +13,23 @@ class HomeContactSectionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('eyebrow_en')
-                    ->label('Eyebrow')
-                    ->searchable(),
 
                 TextColumn::make('title_en')
                     ->label('Title')
                     ->searchable()
-                    ->wrap(),
+                    ->weight('medium')
+                    ->limit(60)
+                    ->placeholder('—'),
+
+                TextColumn::make('eyebrow_en')
+                    ->label('Eyebrow')
+                    ->limit(30)
+                    ->placeholder('—'),
 
                 TextColumn::make('cta_label_en')
-                    ->label('CTA'),
+                    ->label('CTA')
+                    ->limit(35)
+                    ->placeholder('—'),
 
                 IconColumn::make('is_active')
                     ->label('Active')
@@ -31,11 +37,16 @@ class HomeContactSectionsTable
 
                 TextColumn::make('updated_at')
                     ->label('Updated')
-                    ->dateTime()
+                    ->dateTime('M j, Y — H:i')
                     ->sortable(),
+
             ])
             ->recordActions([
                 EditAction::make(),
-            ]);
+            ])
+            ->defaultSort(
+                'updated_at',
+                'desc'
+            );
     }
 }

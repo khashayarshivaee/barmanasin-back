@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ProjectCategories\Schemas;
 
+use App\Models\ProjectCategory;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -13,11 +14,13 @@ class ProjectCategoryForm
     {
         return $schema
             ->components([
+
                 Section::make('Category Information')
                     ->description(
                         'Project categories are shared across the Projects section and Home featured projects.'
                     )
                     ->schema([
+
                         TextInput::make('name_en')
                             ->label('Name — English')
                             ->required()
@@ -37,13 +40,20 @@ class ProjectCategoryForm
                             ->regex('/^[a-z0-9]+(?:-[a-z0-9]+)*$/')
                             ->helperText(
                                 'Lowercase English letters, numbers and hyphens only. Example: mineral-processing'
-                            ),
+                            )
+                            ->columnSpanFull(),
 
                         TextInput::make('sort_order')
                             ->label('Sort Order')
                             ->numeric()
-                            ->minValue(0)
-                            ->default(0)
+                            ->minValue(1)
+                            ->default(
+                                fn (): int =>
+                                    (
+                                        ProjectCategory::query()
+                                            ->max('sort_order') ?? 0
+                                    ) + 1
+                            )
                             ->required(),
 
                         Toggle::make('is_active')
@@ -52,8 +62,11 @@ class ProjectCategoryForm
                             ->helperText(
                                 'Inactive categories remain stored but are hidden from public content.'
                             ),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
             ]);
     }
 }

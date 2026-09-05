@@ -8,7 +8,9 @@ use Filament\Resources\Pages\ManageRecords;
 
 class ManageHomeFeaturedProjectsSections extends ManageRecords
 {
-    protected static string $resource = HomeFeaturedProjectsSectionResource::class;
+    protected static string $resource =
+        HomeFeaturedProjectsSectionResource::class;
+
 
     protected function getHeaderActions(): array
     {
@@ -16,7 +18,8 @@ class ManageHomeFeaturedProjectsSections extends ManageRecords
             CreateAction::make()
                 ->label('Configure Selected Works')
                 ->visible(
-                    fn (): bool => HomeFeaturedProjectsSectionResource::canCreate()
+                    fn (): bool =>
+                    HomeFeaturedProjectsSectionResource::canCreate()
                 ),
         ];
     }

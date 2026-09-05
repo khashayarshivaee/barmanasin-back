@@ -10,6 +10,7 @@ class ManageContactInquiries extends ManageRecords
     protected static string $resource =
         ContactInquiryResource::class;
 
+
     protected function getHeaderActions(): array
     {
         return [];

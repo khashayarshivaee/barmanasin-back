@@ -28,11 +28,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class MegaMenuSectionsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'megaMenuSections';
+    protected static string $relationship =
+        'megaMenuSections';
 
-    protected static ?string $title = 'Mega Menu Sections';
+    protected static ?string $title =
+        'Mega Menu Sections';
 
-    protected static ?string $recordTitleAttribute = 'title_en';
+    protected static ?string $recordTitleAttribute =
+        'title_en';
+
 
     public static function canViewForRecord(
         Model $ownerRecord,
@@ -41,18 +45,21 @@ class MegaMenuSectionsRelationManager extends RelationManager
         return $ownerRecord->type === 'mega';
     }
 
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
+
                 Grid::make([
                     'default' => 1,
                     'xl' => 12,
                 ])
                     ->schema([
+
                         /*
                         |--------------------------------------------------------------------------
-                        | Section Settings
+                        | Section Details
                         |--------------------------------------------------------------------------
                         */
 
@@ -61,31 +68,60 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                 'Configure the title and visibility of this mega menu column.'
                             )
                             ->schema([
+
                                 TextInput::make('title_en')
-                                    ->label('English Title')
+                                    ->label('Title — English')
                                     ->placeholder('e.g. Products')
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->extraInputAttributes([
+                                        'dir' => 'ltr',
+                                    ])
+                                    ->dehydrateStateUsing(
+                                        fn (?string $state): ?string =>
+                                        $state !== null
+                                            ? trim($state)
+                                            : null
+                                    ),
 
                                 TextInput::make('title_fa')
-                                    ->label('Persian Title')
+                                    ->label('Title — Persian')
                                     ->placeholder('مثلاً محصولات')
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->extraInputAttributes([
+                                        'dir' => 'rtl',
+                                    ])
+                                    ->dehydrateStateUsing(
+                                        fn (?string $state): ?string =>
+                                        $state !== null
+                                            ? trim($state)
+                                            : null
+                                    ),
 
                                 Toggle::make('is_active')
-                                    ->label('Visible on website')
+                                    ->label('Visible on Website')
+                                    ->default(true)
                                     ->helperText(
                                         'Turn this off to temporarily hide the entire section.'
-                                    )
-                                    ->default(true),
+                                    ),
 
                                 Hidden::make('sort_order')
-                                    ->default(0),
+                                    ->default(
+                                        fn (): int =>
+                                            (
+                                                $this
+                                                    ->getOwnerRecord()
+                                                    ->megaMenuSections()
+                                                    ->max('sort_order') ?? 0
+                                            ) + 1
+                                    ),
+
                             ])
                             ->columns(1)
                             ->columnSpan([
                                 'default' => 1,
                                 'xl' => 4,
                             ]),
+
 
                         /*
                         |--------------------------------------------------------------------------
@@ -98,11 +134,13 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                 'Create, arrange and manage the links displayed inside this section.'
                             )
                             ->schema([
+
                                 Repeater::make('links')
                                     ->hiddenLabel()
                                     ->relationship()
                                     ->orderColumn('sort_order')
                                     ->schema([
+
                                         /*
                                         |--------------------------------------------------------------------------
                                         | Titles
@@ -111,23 +149,49 @@ class MegaMenuSectionsRelationManager extends RelationManager
 
                                         Grid::make([
                                             'default' => 1,
-                                            'xl' => 2,
+                                            'md' => 2,
                                         ])
                                             ->schema([
+
                                                 TextInput::make('title_en')
-                                                    ->label('English Title')
-                                                    ->placeholder('e.g. Web Development')
+                                                    ->label('Title — English')
+                                                    ->placeholder(
+                                                        'e.g. Web Development'
+                                                    )
                                                     ->required()
                                                     ->maxLength(255)
-                                                    ->live(onBlur: true),
+                                                    ->live(onBlur: true)
+                                                    ->extraInputAttributes([
+                                                        'dir' => 'ltr',
+                                                    ])
+                                                    ->dehydrateStateUsing(
+                                                        fn (?string $state): ?string =>
+                                                        $state !== null
+                                                            ? trim($state)
+                                                            : null
+                                                    ),
 
                                                 TextInput::make('title_fa')
-                                                    ->label('Persian Title')
-                                                    ->placeholder('مثلاً طراحی وب')
+                                                    ->label('Title — Persian')
+                                                    ->placeholder(
+                                                        'مثلاً طراحی وب'
+                                                    )
                                                     ->required()
                                                     ->maxLength(255)
-                                                    ->live(onBlur: true),
-                                            ]),
+                                                    ->live(onBlur: true)
+                                                    ->extraInputAttributes([
+                                                        'dir' => 'rtl',
+                                                    ])
+                                                    ->dehydrateStateUsing(
+                                                        fn (?string $state): ?string =>
+                                                        $state !== null
+                                                            ? trim($state)
+                                                            : null
+                                                    ),
+
+                                            ])
+                                            ->columnSpanFull(),
+
 
                                         /*
                                         |--------------------------------------------------------------------------
@@ -135,27 +199,30 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                         |--------------------------------------------------------------------------
                                         */
 
-                                        Grid::make([
-                                            'default' => 1,
-                                            'xl' => 2,
-                                        ])
-                                            ->schema([
-                                                Textarea::make('description_en')
-                                                    ->label('English Description')
-                                                    ->placeholder(
-                                                        'Short description shown below the link title'
-                                                    )
-                                                    ->rows(3)
-                                                    ->maxLength(255),
+                                        Textarea::make('description_en')
+                                            ->label('Description — English')
+                                            ->placeholder(
+                                                'Short description shown below the link title'
+                                            )
+                                            ->rows(4)
+                                            ->maxLength(500)
+                                            ->extraInputAttributes([
+                                                'dir' => 'ltr',
+                                            ])
+                                            ->columnSpanFull(),
 
-                                                Textarea::make('description_fa')
-                                                    ->label('Persian Description')
-                                                    ->placeholder(
-                                                        'توضیح کوتاه برای نمایش زیر عنوان لینک'
-                                                    )
-                                                    ->rows(3)
-                                                    ->maxLength(255),
-                                            ]),
+                                        Textarea::make('description_fa')
+                                            ->label('Description — Persian')
+                                            ->placeholder(
+                                                'توضیح کوتاه برای نمایش زیر عنوان لینک'
+                                            )
+                                            ->rows(4)
+                                            ->maxLength(500)
+                                            ->extraInputAttributes([
+                                                'dir' => 'rtl',
+                                            ])
+                                            ->columnSpanFull(),
+
 
                                         /*
                                         |--------------------------------------------------------------------------
@@ -165,14 +232,18 @@ class MegaMenuSectionsRelationManager extends RelationManager
 
                                         Grid::make([
                                             'default' => 1,
-                                            'xl' => 2,
+                                            'md' => 2,
                                         ])
                                             ->schema([
+
                                                 Select::make('link_type')
                                                     ->label('Link Type')
                                                     ->options([
-                                                        'internal' => 'Internal Page',
-                                                        'external' => 'External Website',
+                                                        'internal' =>
+                                                            'Internal Page',
+
+                                                        'external' =>
+                                                            'External Website',
                                                     ])
                                                     ->default('internal')
                                                     ->required()
@@ -183,10 +254,13 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                                             Set $set,
                                                             ?string $state,
                                                         ): void {
-                                                            if ($state === 'internal') {
+                                                            if (
+                                                                $state ===
+                                                                'internal'
+                                                            ) {
                                                                 $set(
                                                                     'open_in_new_tab',
-                                                                    false,
+                                                                    false
                                                                 );
                                                             }
                                                         }
@@ -195,25 +269,40 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                                 TextInput::make('path')
                                                     ->label(
                                                         fn (Get $get): string =>
-                                                        $get('link_type') === 'external'
+                                                        $get('link_type') ===
+                                                        'external'
                                                             ? 'External URL'
                                                             : 'Internal Path'
                                                     )
                                                     ->placeholder(
                                                         fn (Get $get): string =>
-                                                        $get('link_type') === 'external'
+                                                        $get('link_type') ===
+                                                        'external'
                                                             ? 'https://example.com'
-                                                            : '/project'
+                                                            : '/projects'
                                                     )
                                                     ->helperText(
                                                         fn (Get $get): string =>
-                                                        $get('link_type') === 'external'
+                                                        $get('link_type') ===
+                                                        'external'
                                                             ? 'Enter the complete destination URL.'
-                                                            : 'Enter the Angular route, for example /project.'
+                                                            : 'Enter the Angular route, for example /projects.'
                                                     )
                                                     ->required()
-                                                    ->maxLength(255),
-                                            ]),
+                                                    ->maxLength(255)
+                                                    ->extraInputAttributes([
+                                                        'dir' => 'ltr',
+                                                    ])
+                                                    ->dehydrateStateUsing(
+                                                        fn (?string $state): ?string =>
+                                                        $state !== null
+                                                            ? trim($state)
+                                                            : null
+                                                    ),
+
+                                            ])
+                                            ->columnSpanFull(),
+
 
                                         /*
                                         |--------------------------------------------------------------------------
@@ -223,9 +312,10 @@ class MegaMenuSectionsRelationManager extends RelationManager
 
                                         Grid::make([
                                             'default' => 1,
-                                            'xl' => 2,
+                                            'md' => 2,
                                         ])
                                             ->schema([
+
                                                 FileUpload::make('icon')
                                                     ->label('Menu Icon')
                                                     ->helperText(
@@ -241,17 +331,24 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                                         'header/mega-menu/icons'
                                                     )
                                                     ->visibility('public')
-                                                    ->imagePreviewHeight('120')
+                                                    ->imagePreviewHeight('140')
                                                     ->maxSize(2048)
                                                     ->preventFilePathTampering(
-                                                        allowFilePathUsing: fn (string $file): bool =>
-                                                        str_starts_with($file, 'header/mega-menu/icons/'),
+                                                        allowFilePathUsing:
+                                                        fn (string $file): bool =>
+                                                        str_starts_with(
+                                                            $file,
+                                                            'header/mega-menu/icons/'
+                                                        ),
                                                     ),
 
                                                 Grid::make(1)
                                                     ->schema([
+
                                                         Toggle::make('is_active')
-                                                            ->label('Visible')
+                                                            ->label(
+                                                                'Visible on Website'
+                                                            )
                                                             ->helperText(
                                                                 'Show this link in the mega menu.'
                                                             )
@@ -261,65 +358,80 @@ class MegaMenuSectionsRelationManager extends RelationManager
                                                             'open_in_new_tab'
                                                         )
                                                             ->label(
-                                                                'Open in new tab'
+                                                                'Open in New Tab'
                                                             )
                                                             ->helperText(
-                                                                'Useful for links to external websites.'
+                                                                'Available for external website links.'
                                                             )
                                                             ->default(false)
                                                             ->visible(
                                                                 fn (Get $get): bool =>
-                                                                    $get('link_type') === 'external'
+                                                                    $get(
+                                                                        'link_type'
+                                                                    ) ===
+                                                                    'external'
                                                             ),
+
                                                     ]),
-                                            ]),
+
+                                            ])
+                                            ->columnSpanFull(),
+
                                     ])
+
                                     ->itemLabel(
                                         fn (array $state): string =>
                                             $state['title_en']
                                             ?? $state['title_fa']
                                             ?? 'New navigation link'
                                     )
+
                                     ->collapsible()
                                     ->collapsed()
-                                    ->reorderable()
-                                    ->defaultItems(0)
-                                    ->addActionLabel('Add Navigation Link')
-                                    ->extraAttributes([
-                                        'style' => '
-                                          max-height: calc(100vh - 320px);
-                                          overflow-y: auto;
-                                          overscroll-behavior: contain;
-                                          padding-right: 6px;
-                                           ',
-                                    ])
 
+                                    ->reorderable()
+
+                                    ->defaultItems(0)
+
+                                    ->addActionLabel(
+                                        'Add Navigation Link'
+                                    )
 
                                     ->columnSpanFull(),
+
                             ])
+
                             ->columnSpan([
                                 'default' => 1,
                                 'xl' => 8,
                             ]),
+
                     ])
+
                     ->columnSpanFull(),
+
             ]);
     }
+
 
     public function table(Table $table): Table
     {
         return $table
             ->recordTitleAttribute('title_en')
+
             ->columns([
+
                 TextColumn::make('title_en')
                     ->label('Section')
                     ->description(
                         fn (Model $record): string =>
-                        $record->title_fa ?: 'No Persian title'
+                        $record->title_fa
+                            ?: 'No Persian title'
                     )
                     ->searchable()
                     ->sortable()
-                    ->weight('medium'),
+                    ->weight('medium')
+                    ->placeholder('Untitled Section'),
 
                 TextColumn::make('links_count')
                     ->label('Links')
@@ -330,6 +442,15 @@ class MegaMenuSectionsRelationManager extends RelationManager
 
                 TextColumn::make('sort_order')
                     ->label('Order')
+                    ->formatStateUsing(
+                        fn ($state): string =>
+                        str_pad(
+                            (string) $state,
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        )
+                    )
                     ->badge()
                     ->color('gray')
                     ->alignCenter(),
@@ -340,45 +461,70 @@ class MegaMenuSectionsRelationManager extends RelationManager
 
                 TextColumn::make('updated_at')
                     ->label('Last Updated')
-                    ->dateTime('M j, Y H:i')
+                    ->dateTime('M j, Y — H:i')
                     ->sortable()
                     ->toggleable(
-                        isToggledHiddenByDefault: true,
+                        isToggledHiddenByDefault: true
                     ),
+
             ])
-            ->defaultSort('sort_order')
-            ->reorderable('sort_order')
-            ->emptyStateHeading('No mega menu sections yet')
-            ->emptyStateDescription(
-                'Create your first section and start adding navigation links.'
-            )
-            ->emptyStateIcon('heroicon-o-rectangle-stack')
+
             ->headerActions([
+
                 CreateAction::make()
                     ->label('New Section')
                     ->icon('heroicon-m-plus')
-                    ->modalHeading('Create Mega Menu Section')
+                    ->modalHeading(
+                        'Create Mega Menu Section'
+                    )
                     ->modalDescription(
                         'Build a navigation section and manage all of its links.'
                     )
                     ->modalWidth(Width::Screen)
                     ->stickyModalHeader()
                     ->stickyModalFooter(),
+
             ])
+
             ->recordActions([
+
                 EditAction::make()
                     ->label('Edit')
-                    ->modalHeading('Edit Mega Menu Section')
+                    ->modalHeading(
+                        'Edit Mega Menu Section'
+                    )
                     ->modalWidth(Width::Screen)
                     ->stickyModalHeader()
                     ->stickyModalFooter(),
 
                 DeleteAction::make(),
+
             ])
+
             ->toolbarActions([
+
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+
+            ])
+
+            ->defaultSort('sort_order')
+
+            ->reorderable('sort_order')
+
+            ->paginated(false)
+
+            ->emptyStateHeading(
+                'No mega menu sections yet'
+            )
+
+            ->emptyStateDescription(
+                'Create your first section and start adding navigation links.'
+            )
+
+            ->emptyStateIcon(
+                'heroicon-o-rectangle-stack'
+            );
     }
 }

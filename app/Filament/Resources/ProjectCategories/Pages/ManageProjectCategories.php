@@ -8,7 +8,9 @@ use Filament\Resources\Pages\ManageRecords;
 
 class ManageProjectCategories extends ManageRecords
 {
-    protected static string $resource = ProjectCategoryResource::class;
+    protected static string $resource =
+        ProjectCategoryResource::class;
+
 
     protected function getHeaderActions(): array
     {

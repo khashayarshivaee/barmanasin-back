@@ -11,6 +11,7 @@ class ManageHomeContactSections extends ManageRecords
     protected static string $resource =
         HomeContactSectionResource::class;
 
+
     protected function getHeaderActions(): array
     {
         return [

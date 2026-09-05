@@ -18,9 +18,19 @@ class ProjectForm
     {
         return $schema
             ->components([
+
+                /*
+                |--------------------------------------------------------------------------
+                | Project Information
+                |--------------------------------------------------------------------------
+                */
+
                 Section::make('Project Information')
-                    ->description('Core bilingual information for this project.')
+                    ->description(
+                        'Core bilingual information used throughout the website.'
+                    )
                     ->schema([
+
                         Select::make('project_category_id')
                             ->label('Category')
                             ->relationship(
@@ -53,18 +63,30 @@ class ProjectForm
 
                         Textarea::make('short_description_en')
                             ->label('Short Description — English')
-                            ->rows(4)
-                            ->maxLength(1000),
+                            ->rows(5)
+                            ->maxLength(1000)
+                            ->columnSpanFull(),
 
                         Textarea::make('short_description_fa')
                             ->label('Short Description — Persian')
-                            ->rows(4)
-                            ->maxLength(1000),
+                            ->rows(5)
+                            ->maxLength(1000)
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Project Details
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Project Details')
                     ->schema([
+
                         TextInput::make('location_en')
                             ->label('Location — English')
                             ->maxLength(255)
@@ -81,14 +103,24 @@ class ProjectForm
                             ->minValue(1900)
                             ->maxValue((int) date('Y') + 10)
                             ->placeholder((string) date('Y')),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Media
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Media')
                     ->description(
-                        'The main cover is required. A separate mobile image is optional and can be added when a different crop works better on smaller screens.'
+                        'The main cover is required. A separate mobile image is optional when a different crop works better on smaller screens.'
                     )
                     ->schema([
+
                         FileUpload::make('cover_image_path')
                             ->label('Cover Image')
                             ->image()
@@ -97,10 +129,13 @@ class ProjectForm
                             ->visibility('public')
                             ->required()
                             ->maxSize(10240)
+                            ->imagePreviewHeight('220')
                             ->openable()
                             ->downloadable()
                             ->preventFilePathTampering()
-                            ->helperText('Main cinematic image. Maximum file size: 10 MB.'),
+                            ->helperText(
+                                'Main cinematic image. Maximum file size: 10 MB.'
+                            ),
 
                         FileUpload::make('mobile_cover_image_path')
                             ->label('Mobile Cover Image')
@@ -109,17 +144,31 @@ class ProjectForm
                             ->directory('projects/mobile-covers')
                             ->visibility('public')
                             ->maxSize(10240)
+                            ->imagePreviewHeight('220')
                             ->openable()
                             ->downloadable()
                             ->preventFilePathTampering()
                             ->helperText(
                                 'Optional. If empty, the frontend will use the main cover image.'
                             ),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Publishing
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Publishing')
+                    ->description(
+                        'Control the publication status and timing of this project.'
+                    )
                     ->schema([
+
                         Select::make('status')
                             ->label('Status')
                             ->options([
@@ -145,21 +194,13 @@ class ProjectForm
                                     $get('status') === Project::STATUS_PUBLISHED
                             )
                             ->helperText(
-                                'Time is shown in Tehran timezone.'
-                            )
-                            ->required(
-                                fn (Get $get): bool =>
-                                    $get('status') === Project::STATUS_PUBLISHED
-                            )
-                            ->visible(
-                                fn (Get $get): bool =>
-                                    $get('status') === Project::STATUS_PUBLISHED
-                            )
-                            ->helperText(
-                                'Required when the project is published.'
+                                'Required when the project is published. Time is shown in Tehran timezone.'
                             ),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
             ]);
     }
 }

@@ -16,32 +16,39 @@ class HeaderMenuItemForm
     {
         return $schema
             ->components([
+
                 Grid::make([
                     'default' => 1,
                     'xl' => 12,
                 ])
                     ->schema([
+
                         /*
                         |--------------------------------------------------------------------------
-                        | Main Content
+                        | Menu Content
                         |--------------------------------------------------------------------------
                         */
 
                         Section::make('Menu Content')
                             ->description(
-                                'Manage the labels and destination used in the website navigation.'
+                                'Manage the bilingual labels and destination used in the website navigation.'
                             )
                             ->schema([
+
                                 Grid::make([
                                     'default' => 1,
                                     'md' => 2,
                                 ])
                                     ->schema([
+
                                         TextInput::make('title_en')
-                                            ->label('English Title')
+                                            ->label('Title — English')
                                             ->placeholder('e.g. Products')
                                             ->required()
                                             ->maxLength(255)
+                                            ->extraInputAttributes([
+                                                'dir' => 'ltr',
+                                            ])
                                             ->dehydrateStateUsing(
                                                 fn (?string $state): ?string =>
                                                 $state !== null
@@ -50,7 +57,7 @@ class HeaderMenuItemForm
                                             ),
 
                                         TextInput::make('title_fa')
-                                            ->label('Persian Title')
+                                            ->label('Title — Persian')
                                             ->placeholder('مثلاً محصولات')
                                             ->required()
                                             ->maxLength(255)
@@ -63,6 +70,7 @@ class HeaderMenuItemForm
                                                     ? trim($state)
                                                     : null
                                             ),
+
                                     ]),
 
                                 TextInput::make('path')
@@ -72,12 +80,12 @@ class HeaderMenuItemForm
                                             ? 'Landing Page Path'
                                             : 'Destination Path'
                                     )
-                                    ->placeholder('/project')
+                                    ->placeholder('/projects')
                                     ->helperText(
                                         fn (Get $get): string =>
                                         $get('type') === 'mega'
-                                            ? 'The page associated with this mega menu item.'
-                                            : 'The internal route opened when this menu item is selected.'
+                                            ? 'The frontend page associated with this mega menu item.'
+                                            : 'The internal frontend route opened when this menu item is selected.'
                                     )
                                     ->required()
                                     ->maxLength(255)
@@ -89,24 +97,28 @@ class HeaderMenuItemForm
                                         $state !== null
                                             ? trim($state)
                                             : null
-                                    ),
+                                    )
+                                    ->columnSpanFull(),
+
                             ])
                             ->columnSpan([
                                 'default' => 1,
                                 'xl' => 8,
                             ]),
 
+
                         /*
                         |--------------------------------------------------------------------------
-                        | Sidebar Settings
+                        | Menu Settings
                         |--------------------------------------------------------------------------
                         */
 
                         Section::make('Menu Settings')
                             ->description(
-                                'Control the behavior, visibility and position of this item.'
+                                'Control the behavior, visibility and position of this navigation item.'
                             )
                             ->schema([
+
                                 Select::make('type')
                                     ->label('Menu Type')
                                     ->options([
@@ -121,32 +133,35 @@ class HeaderMenuItemForm
                                         fn (Get $get): string =>
                                         $get('type') === 'mega'
                                             ? 'Displays a structured mega menu containing sections and links.'
-                                            : 'Navigates directly to the destination page.'
+                                            : 'Navigates directly to the destination path.'
                                     ),
-
-                                Toggle::make('is_active')
-                                    ->label('Visible on website')
-                                    ->helperText(
-                                        'Hide this item without deleting its configuration.'
-                                    )
-                                    ->default(true),
 
                                 TextInput::make('sort_order')
                                     ->label('Menu Order')
-                                    ->helperText(
-                                        'Lower numbers appear earlier in the navigation.'
-                                    )
                                     ->numeric()
                                     ->minValue(0)
                                     ->default(0)
-                                    ->required(),
+                                    ->required()
+                                    ->helperText(
+                                        'Lower numbers appear earlier in the website navigation.'
+                                    ),
+
+                                Toggle::make('is_active')
+                                    ->label('Visible on Website')
+                                    ->default(true)
+                                    ->helperText(
+                                        'Hide this item without deleting its configuration.'
+                                    ),
+
                             ])
                             ->columnSpan([
                                 'default' => 1,
                                 'xl' => 4,
                             ]),
+
                     ])
                     ->columnSpanFull(),
+
             ]);
     }
 }

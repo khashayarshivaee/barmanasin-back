@@ -14,30 +14,34 @@ class HomeEngineeringApproachSectionsTable
         return $table
             ->columns([
 
-                TextColumn::make('eyebrow_en')
-                    ->label('Eyebrow')
-                    ->placeholder('—'),
-
-
                 TextColumn::make('title_en')
                     ->label('Title')
                     ->weight('medium')
-                    ->wrap(),
+                    ->searchable()
+                    ->limit(60)
+                    ->placeholder('—'),
 
+                TextColumn::make('steps_count')
+                    ->label('Steps')
+                    ->counts('steps')
+                    ->badge(),
 
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
 
-
                 TextColumn::make('updated_at')
                     ->label('Updated')
-                    ->dateTime('M j, Y H:i')
+                    ->dateTime('M j, Y — H:i')
                     ->sortable(),
 
             ])
             ->recordActions([
                 EditAction::make(),
-            ]);
+            ])
+            ->defaultSort(
+                'updated_at',
+                'desc'
+            );
     }
 }

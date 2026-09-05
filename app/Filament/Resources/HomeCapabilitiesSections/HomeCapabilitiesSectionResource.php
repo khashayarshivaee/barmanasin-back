@@ -9,17 +9,19 @@ use App\Models\HomeCapabilitiesSection;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
 
 class HomeCapabilitiesSectionResource extends Resource
 {
-    protected static ?string $model = HomeCapabilitiesSection::class;
+    protected static ?string $model =
+        HomeCapabilitiesSection::class;
 
-    protected static string | BackedEnum | null $navigationIcon =
-        'heroicon-o-wrench-screwdriver';
+    protected static string|BackedEnum|null $navigationIcon =
+        Heroicon::OutlinedWrenchScrewdriver;
 
-    protected static string | UnitEnum | null $navigationGroup =
+    protected static string|UnitEnum|null $navigationGroup =
         'Home';
 
     protected static ?string $navigationLabel =
@@ -34,24 +36,30 @@ class HomeCapabilitiesSectionResource extends Resource
     protected static ?string $recordTitleAttribute =
         'title_en';
 
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort =
+        35;
+
 
     public static function form(Schema $schema): Schema
     {
         return HomeCapabilitiesSectionForm::configure($schema);
     }
 
+
     public static function table(Table $table): Table
     {
         return HomeCapabilitiesSectionsTable::configure($table);
     }
 
+
     public static function getPages(): array
     {
         return [
-            'index' => ManageHomeCapabilitiesSections::route('/'),
+            'index' =>
+                ManageHomeCapabilitiesSections::route('/'),
         ];
     }
+
 
     public static function canCreate(): bool
     {

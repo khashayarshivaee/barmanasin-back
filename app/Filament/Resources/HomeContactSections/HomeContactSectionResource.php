@@ -15,7 +15,8 @@ use UnitEnum;
 
 class HomeContactSectionResource extends Resource
 {
-    protected static ?string $model = HomeContactSection::class;
+    protected static ?string $model =
+        HomeContactSection::class;
 
     protected static string|BackedEnum|null $navigationIcon =
         Heroicon::OutlinedChatBubbleLeftRight;
@@ -32,11 +33,11 @@ class HomeContactSectionResource extends Resource
     protected static ?string $pluralModelLabel =
         'Contact';
 
-    protected static ?int $navigationSort =
-        50;
-
     protected static ?string $recordTitleAttribute =
         'title_en';
+
+    protected static ?int $navigationSort =
+        45;
 
 
     public static function form(Schema $schema): Schema
@@ -51,16 +52,11 @@ class HomeContactSectionResource extends Resource
     }
 
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
-
-
     public static function getPages(): array
     {
         return [
-            'index' => ManageHomeContactSections::route('/'),
+            'index' =>
+                ManageHomeContactSections::route('/'),
         ];
     }
 

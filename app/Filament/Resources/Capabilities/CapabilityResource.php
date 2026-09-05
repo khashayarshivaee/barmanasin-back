@@ -12,17 +12,19 @@ use App\Models\Capability;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use UnitEnum;
 
 class CapabilityResource extends Resource
 {
-    protected static ?string $model = Capability::class;
+    protected static ?string $model =
+        Capability::class;
 
-    protected static string | BackedEnum | null $navigationIcon =
-        'heroicon-o-cpu-chip';
+    protected static string|BackedEnum|null $navigationIcon =
+        Heroicon::OutlinedCpuChip;
 
-    protected static string | UnitEnum | null $navigationGroup =
+    protected static string|UnitEnum|null $navigationGroup =
         'Capabilities';
 
     protected static ?string $navigationLabel =
@@ -37,17 +39,21 @@ class CapabilityResource extends Resource
     protected static ?string $recordTitleAttribute =
         'title_en';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort =
+        10;
+
 
     public static function form(Schema $schema): Schema
     {
         return CapabilityForm::configure($schema);
     }
 
+
     public static function table(Table $table): Table
     {
         return CapabilitiesTable::configure($table);
     }
+
 
     public static function getRelations(): array
     {
@@ -56,12 +62,18 @@ class CapabilityResource extends Resource
         ];
     }
 
+
     public static function getPages(): array
     {
         return [
-            'index' => ListCapabilities::route('/'),
-            'create' => CreateCapability::route('/create'),
-            'edit' => EditCapability::route('/{record}/edit'),
+            'index' =>
+                ListCapabilities::route('/'),
+
+            'create' =>
+                CreateCapability::route('/create'),
+
+            'edit' =>
+                EditCapability::route('/{record}/edit'),
         ];
     }
 }

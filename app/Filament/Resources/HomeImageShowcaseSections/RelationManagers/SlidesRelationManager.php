@@ -10,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
@@ -22,58 +23,125 @@ class SlidesRelationManager extends RelationManager
 
     protected static ?string $title = 'Showcase Slides';
 
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                FileUpload::make('image_path')
-                    ->label('Image')
-                    ->image()
-                    ->disk('public')
-                    ->directory('home/image-showcase')
-                    ->visibility('public')
-                    ->required(),
 
-                TextInput::make('title_en')
-                    ->label('Title EN')
-                    ->required()
-                    ->maxLength(255),
+                /*
+                |--------------------------------------------------------------------------
+                | Image
+                |--------------------------------------------------------------------------
+                */
 
-                TextInput::make('title_fa')
-                    ->label('Title FA')
-                    ->maxLength(255),
-
-                Textarea::make('description_en')
-                    ->label('Description EN')
-                    ->rows(4),
-
-                Textarea::make('description_fa')
-                    ->label('Description FA')
-                    ->rows(4),
-
-                TextInput::make('sort_order')
-                    ->label('Sort Order')
-                    ->numeric()
-                    ->default(
-                        fn () =>
-                            ($this->getOwnerRecord()
-                                ->slides()
-                                ->max('sort_order') ?? 0) + 1
+                Section::make('Image')
+                    ->description(
+                        'Main visual displayed for this showcase slide.'
                     )
-                    ->required(),
+                    ->schema([
 
-                Toggle::make('is_active')
-                    ->label('Active')
-                    ->default(true),
+                        FileUpload::make('image_path')
+                            ->label('Slide Image')
+                            ->image()
+                            ->disk('public')
+                            ->directory('home/image-showcase')
+                            ->visibility('public')
+                            ->imagePreviewHeight('260')
+                            ->required()
+                            ->columnSpanFull(),
+
+                    ])
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Content
+                |--------------------------------------------------------------------------
+                */
+
+                Section::make('Content')
+                    ->schema([
+
+                        TextInput::make('title_en')
+                            ->label('Title EN')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('title_fa')
+                            ->label('Title FA')
+                            ->maxLength(255),
+
+                        Textarea::make('description_en')
+                            ->label('Description EN')
+                            ->rows(5)
+                            ->columnSpanFull(),
+
+                        Textarea::make('description_fa')
+                            ->label('Description FA')
+                            ->rows(5)
+                            ->columnSpanFull(),
+
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Settings
+                |--------------------------------------------------------------------------
+                */
+
+                Section::make('Settings')
+                    ->schema([
+
+                        TextInput::make('sort_order')
+                            ->label('Sort Order')
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(
+                                fn (): int =>
+                                    (
+                                        $this
+                                            ->getOwnerRecord()
+                                            ->slides()
+                                            ->max('sort_order') ?? 0
+                                    ) + 1
+                            )
+                            ->required(),
+
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true),
+
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+
             ]);
     }
+
 
     public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('title_en')
+
             ->columns([
+
                 TextColumn::make('sort_order')
                     ->label('#')
+                    ->formatStateUsing(
+                        fn ($state): string =>
+                        str_pad(
+                            (string) $state,
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        )
+                    )
                     ->sortable(),
 
                 ImageColumn::make('image_path')
@@ -86,26 +154,38 @@ class SlidesRelationManager extends RelationManager
                     ->searchable()
                     ->limit(50),
 
+                TextColumn::make('description_en')
+                    ->label('Description')
+                    ->limit(55)
+                    ->placeholder('—'),
+
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
+
             ])
+
             ->headerActions([
                 CreateAction::make()
                     ->label('Add Slide')
                     ->visible(
                         fn (): bool =>
-                            $this->getOwnerRecord()
+                            $this
+                                ->getOwnerRecord()
                                 ->slides()
                                 ->count() < 5
                     ),
             ])
+
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
             ])
+
             ->defaultSort('sort_order')
+
             ->reorderable('sort_order')
+
             ->paginated(false);
     }
 }

@@ -7,5 +7,17 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateSiteFooter extends CreateRecord
 {
-    protected static string $resource = SiteFooterResource::class;
+    protected static string $resource =
+        SiteFooterResource::class;
+
+
+    protected function getRedirectUrl(): string
+    {
+        return static::$resource::getUrl(
+            'edit',
+            [
+                'record' => $this->record,
+            ]
+        );
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SiteFooters\Tables;
 
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -14,10 +15,14 @@ class SiteFootersTable
         return $table
             ->columns([
 
-                TextColumn::make('description_en')
-                    ->label('Description')
-                    ->limit(60)
-                    ->wrap()
+                ImageColumn::make('logo_path')
+                    ->label('Logo')
+                    ->disk('public')
+                    ->height(40),
+
+                TextColumn::make('copyright_en')
+                    ->label('Copyright')
+                    ->limit(45)
                     ->placeholder('—'),
 
                 TextColumn::make('email')
@@ -27,6 +32,7 @@ class SiteFootersTable
 
                 TextColumn::make('phone')
                     ->label('Phone')
+                    ->copyable()
                     ->placeholder('—'),
 
                 IconColumn::make('is_active')
@@ -39,11 +45,9 @@ class SiteFootersTable
                     ->sortable(),
 
             ])
-
             ->recordActions([
                 EditAction::make(),
             ])
-
             ->defaultSort(
                 'updated_at',
                 'desc'

@@ -7,5 +7,17 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateHomeImageShowcaseSection extends CreateRecord
 {
-    protected static string $resource = HomeImageShowcaseSectionResource::class;
+    protected static string $resource =
+        HomeImageShowcaseSectionResource::class;
+
+
+    protected function getRedirectUrl(): string
+    {
+        return static::$resource::getUrl(
+            'edit',
+            [
+                'record' => $this->record,
+            ]
+        );
+    }
 }

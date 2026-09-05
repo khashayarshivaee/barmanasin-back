@@ -15,27 +15,34 @@ class HeaderMenuItemsTable
     {
         return $table
             ->columns([
+
                 TextColumn::make('title_en')
                     ->label('Menu Item')
                     ->searchable()
                     ->sortable()
-                    ->weight('medium'),
+                    ->weight('medium')
+                    ->limit(45)
+                    ->placeholder('—'),
 
                 TextColumn::make('title_fa')
                     ->label('Persian')
-                    ->searchable(),
+                    ->searchable()
+                    ->limit(45)
+                    ->placeholder('—'),
 
                 TextColumn::make('type')
                     ->label('Type')
                     ->badge()
                     ->formatStateUsing(
-                        fn (string $state): string => match ($state) {
+                        fn (string $state): string =>
+                        match ($state) {
                             'mega' => 'Mega Menu',
                             default => 'Normal Link',
                         }
                     )
                     ->color(
-                        fn (string $state): string => match ($state) {
+                        fn (string $state): string =>
+                        match ($state) {
                             'mega' => 'info',
                             default => 'gray',
                         }
@@ -43,7 +50,12 @@ class HeaderMenuItemsTable
 
                 TextColumn::make('path')
                     ->label('Destination')
-                    ->placeholder('—'),
+                    ->limit(45)
+                    ->placeholder('—')
+                    ->tooltip(
+                        fn ($state): ?string =>
+                        $state ?: null
+                    ),
 
                 TextColumn::make('mega_menu_sections_count')
                     ->label('Sections')
@@ -54,6 +66,15 @@ class HeaderMenuItemsTable
 
                 TextColumn::make('sort_order')
                     ->label('Order')
+                    ->formatStateUsing(
+                        fn ($state): string =>
+                        str_pad(
+                            (string) $state,
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        )
+                    )
                     ->sortable()
                     ->alignCenter(),
 
@@ -64,20 +85,31 @@ class HeaderMenuItemsTable
 
                 TextColumn::make('updated_at')
                     ->label('Last Updated')
-                    ->dateTime('M j, Y H:i')
+                    ->dateTime('M j, Y — H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(
+                        isToggledHiddenByDefault: true
+                    ),
+
             ])
-            ->defaultSort('sort_order')
-            ->stackedOnMobile()
+
             ->recordActions([
                 EditAction::make()
                     ->label('Edit'),
             ])
+
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+
+            ->defaultSort('sort_order')
+
+            ->reorderable('sort_order')
+
+            ->paginated(false)
+
+            ->stackedOnMobile();
     }
 }

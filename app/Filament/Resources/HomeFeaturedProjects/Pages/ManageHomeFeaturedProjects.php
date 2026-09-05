@@ -8,7 +8,9 @@ use Filament\Resources\Pages\ManageRecords;
 
 class ManageHomeFeaturedProjects extends ManageRecords
 {
-    protected static string $resource = HomeFeaturedProjectResource::class;
+    protected static string $resource =
+        HomeFeaturedProjectResource::class;
+
 
     protected function getHeaderActions(): array
     {

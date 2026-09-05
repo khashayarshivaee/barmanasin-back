@@ -8,12 +8,15 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListHeaderMenuItems extends ListRecords
 {
-    protected static string $resource = HeaderMenuItemResource::class;
+    protected static string $resource =
+        HeaderMenuItemResource::class;
+
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('New Menu Item'),
         ];
     }
 }

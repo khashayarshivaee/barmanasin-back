@@ -15,7 +15,16 @@ class ContactInquiryForm
         return $schema
             ->components([
 
+                /*
+                |--------------------------------------------------------------------------
+                | Sender Information
+                |--------------------------------------------------------------------------
+                */
+
                 Section::make('Sender Information')
+                    ->description(
+                        'Contact details submitted by the website visitor.'
+                    )
                     ->schema([
 
                         TextInput::make('name')
@@ -24,6 +33,7 @@ class ContactInquiryForm
 
                         TextInput::make('company')
                             ->label('Company')
+                            ->placeholder('—')
                             ->disabled(),
 
                         TextInput::make('email')
@@ -32,29 +42,52 @@ class ContactInquiryForm
 
                         TextInput::make('phone')
                             ->label('Phone')
+                            ->placeholder('—')
                             ->disabled(),
 
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Inquiry
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Inquiry')
+                    ->description(
+                        'Project context and message submitted through the Contact page.'
+                    )
                     ->schema([
 
                         TextInput::make('project_type')
                             ->label('Project Type')
-                            ->disabled(),
-
-                        Textarea::make('message')
-                            ->label('Message')
-                            ->rows(8)
+                            ->placeholder('—')
                             ->disabled()
                             ->columnSpanFull(),
 
-                    ]),
+                        Textarea::make('message')
+                            ->label('Message')
+                            ->rows(10)
+                            ->disabled()
+                            ->columnSpanFull(),
 
+                    ])
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Management
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Management')
+                    ->description(
+                        'Internal status used to track the inquiry.'
+                    )
                     ->schema([
 
                         Select::make('status')
@@ -65,10 +98,13 @@ class ContactInquiryForm
                                 'resolved' => 'Resolved',
                             ])
                             ->required()
-                            ->native(false),
+                            ->native(false)
+                            ->helperText(
+                                'Update the status as the inquiry is reviewed and handled.'
+                            ),
 
                     ])
-                    ->columns(1),
+                    ->columnSpanFull(),
 
             ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\HomeFeaturedCapabilities\Schemas;
 
+use App\Models\HomeFeaturedCapability;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -14,11 +15,13 @@ class HomeFeaturedCapabilityForm
     {
         return $schema
             ->components([
+
                 Section::make('Featured Capability')
                     ->description(
                         'Select an existing capability to display in the Home Capabilities section.'
                     )
                     ->schema([
+
                         Select::make('capability_id')
                             ->label('Capability')
                             ->relationship(
@@ -28,13 +31,20 @@ class HomeFeaturedCapabilityForm
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->unique(ignoreRecord: true),
+                            ->unique(ignoreRecord: true)
+                            ->columnSpanFull(),
 
                         TextInput::make('sort_order')
                             ->label('Home Sort Order')
                             ->numeric()
-                            ->minValue(0)
-                            ->default(0)
+                            ->minValue(1)
+                            ->default(
+                                fn (): int =>
+                                    (
+                                        HomeFeaturedCapability::query()
+                                            ->max('sort_order') ?? 0
+                                    ) + 1
+                            )
                             ->required(),
 
                         Toggle::make('is_active')
@@ -43,8 +53,11 @@ class HomeFeaturedCapabilityForm
                             ->helperText(
                                 'Only active featured capabilities with published capability content will appear on the website.'
                             ),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
             ]);
     }
 }

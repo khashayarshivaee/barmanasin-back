@@ -14,8 +14,19 @@ class HomeImageShowcaseSectionForm
     {
         return $schema
             ->components([
+
+                /*
+                |--------------------------------------------------------------------------
+                | Content
+                |--------------------------------------------------------------------------
+                */
+
                 Section::make('Content')
+                    ->description(
+                        'Main content displayed above the image showcase.'
+                    )
                     ->schema([
+
                         TextInput::make('eyebrow_en')
                             ->label('Eyebrow EN')
                             ->maxLength(255),
@@ -34,20 +45,35 @@ class HomeImageShowcaseSectionForm
 
                         Textarea::make('description_en')
                             ->label('Description EN')
-                            ->rows(4),
+                            ->rows(5)
+                            ->columnSpanFull(),
 
                         Textarea::make('description_fa')
                             ->label('Description FA')
-                            ->rows(4),
+                            ->rows(5)
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Visibility
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Visibility')
                     ->schema([
+
                         Toggle::make('is_active')
                             ->label('Active')
                             ->default(true),
-                    ]),
+
+                    ])
+                    ->columnSpanFull(),
+
             ]);
     }
 }

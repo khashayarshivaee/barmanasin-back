@@ -9,6 +9,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -18,7 +19,6 @@ class StepsRelationManager extends RelationManager
 {
     protected static string $relationship = 'steps';
 
-
     protected static ?string $title = 'Process Steps';
 
 
@@ -27,44 +27,61 @@ class StepsRelationManager extends RelationManager
         return $schema
             ->components([
 
-                TextInput::make('title_en')
-                    ->label('Title — English')
-                    ->required()
-                    ->maxLength(255),
+                Section::make('Step Content')
+                    ->schema([
+
+                        TextInput::make('title_en')
+                            ->label('Title — English')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('title_fa')
+                            ->label('Title — Persian')
+                            ->required()
+                            ->maxLength(255),
+
+                        Textarea::make('description_en')
+                            ->label('Description — English')
+                            ->rows(5)
+                            ->maxLength(2000)
+                            ->columnSpanFull(),
+
+                        Textarea::make('description_fa')
+                            ->label('Description — Persian')
+                            ->rows(5)
+                            ->maxLength(2000)
+                            ->columnSpanFull(),
+
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
 
 
-                TextInput::make('title_fa')
-                    ->label('Title — Persian')
-                    ->required()
-                    ->maxLength(255),
+                Section::make('Settings')
+                    ->schema([
 
+                        TextInput::make('sort_order')
+                            ->label('Sort Order')
+                            ->numeric()
+                            ->minValue(1)
+                            ->default(
+                                fn (): int =>
+                                    (
+                                        $this
+                                            ->getOwnerRecord()
+                                            ->steps()
+                                            ->max('sort_order') ?? 0
+                                    ) + 1
+                            )
+                            ->required(),
 
-                Textarea::make('description_en')
-                    ->label('Description — English')
-                    ->rows(4),
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true),
 
-
-                Textarea::make('description_fa')
-                    ->label('Description — Persian')
-                    ->rows(4),
-
-
-                TextInput::make('sort_order')
-                    ->label('Sort Order')
-                    ->numeric()
-                    ->default(
-                        fn () => (
-                                $this->getOwnerRecord()
-                                    ->steps()
-                                    ->max('sort_order') ?? 0
-                            ) + 1
-                    )
-                    ->required(),
-
-
-                Toggle::make('is_active')
-                    ->label('Active')
-                    ->default(true),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
 
             ]);
     }
@@ -90,12 +107,11 @@ class StepsRelationManager extends RelationManager
                     )
                     ->sortable(),
 
-
                 TextColumn::make('title_en')
                     ->label('Step')
                     ->weight('medium')
+                    ->searchable()
                     ->wrap(),
-
 
                 TextColumn::make('description_en')
                     ->label('Description')
@@ -103,16 +119,11 @@ class StepsRelationManager extends RelationManager
                     ->wrap()
                     ->toggleable(),
 
-
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
 
             ])
-
-            ->defaultSort('sort_order')
-            ->reorderable('sort_order')
-            ->paginated(false)
 
             ->headerActions([
                 CreateAction::make()
@@ -122,6 +133,12 @@ class StepsRelationManager extends RelationManager
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
-            ]);
+            ])
+
+            ->defaultSort('sort_order')
+
+            ->reorderable('sort_order')
+
+            ->paginated(false);
     }
 }

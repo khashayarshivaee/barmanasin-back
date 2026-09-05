@@ -8,12 +8,15 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListHomeImageShowcaseSections extends ListRecords
 {
-    protected static string $resource = HomeImageShowcaseSectionResource::class;
+    protected static string $resource =
+        HomeImageShowcaseSectionResource::class;
+
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->label('Create Image Showcase'),
         ];
     }
 }

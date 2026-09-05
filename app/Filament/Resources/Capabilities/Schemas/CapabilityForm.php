@@ -18,11 +18,19 @@ class CapabilityForm
     {
         return $schema
             ->components([
+
+                /*
+                |--------------------------------------------------------------------------
+                | Capability Information
+                |--------------------------------------------------------------------------
+                */
+
                 Section::make('Capability Information')
                     ->description(
                         'Core bilingual information used across the website.'
                     )
                     ->schema([
+
                         TextInput::make('title_en')
                             ->label('Title — English')
                             ->required()
@@ -52,18 +60,33 @@ class CapabilityForm
 
                         Textarea::make('short_description_en')
                             ->label('Short Description — English')
-                            ->rows(4)
-                            ->maxLength(1500),
+                            ->rows(5)
+                            ->maxLength(1500)
+                            ->columnSpanFull(),
 
                         Textarea::make('short_description_fa')
                             ->label('Short Description — Persian')
-                            ->rows(4)
-                            ->maxLength(1500),
+                            ->rows(5)
+                            ->maxLength(1500)
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Publishing
+                |--------------------------------------------------------------------------
+                */
 
                 Section::make('Publishing')
+                    ->description(
+                        'Control publication status and public visibility.'
+                    )
                     ->schema([
+
                         Select::make('status')
                             ->label('Status')
                             ->options([
@@ -97,9 +120,13 @@ class CapabilityForm
                             ->default(true)
                             ->helperText(
                                 'Inactive capabilities will not appear in public API responses.'
-                            ),
+                            )
+                            ->columnSpanFull(),
+
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->columnSpanFull(),
+
             ]);
     }
 }

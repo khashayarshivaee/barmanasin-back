@@ -8,7 +8,9 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditCapability extends EditRecord
 {
-    protected static string $resource = CapabilityResource::class;
+    protected static string $resource =
+        CapabilityResource::class;
+
 
     protected function getHeaderActions(): array
     {
