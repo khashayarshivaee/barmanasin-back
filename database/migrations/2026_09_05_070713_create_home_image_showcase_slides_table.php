@@ -11,8 +11,14 @@ return new class extends Migration
         Schema::create('home_image_showcase_slides', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('home_image_showcase_section_id')
-                ->constrained('home_image_showcase_sections')
+            $table->unsignedBigInteger('home_image_showcase_section_id');
+
+            $table->foreign(
+                'home_image_showcase_section_id',
+                'showcase_slides_section_fk'
+            )
+                ->references('id')
+                ->on('home_image_showcase_sections')
                 ->cascadeOnDelete();
 
             $table->string('image_path');
@@ -31,10 +37,13 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index([
-                'home_image_showcase_section_id',
-                'sort_order',
-            ]);
+            $table->index(
+                [
+                    'home_image_showcase_section_id',
+                    'sort_order',
+                ],
+                'showcase_slides_sort_idx'
+            );
         });
     }
 
