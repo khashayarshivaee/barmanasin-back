@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\HomeCapabilitiesController;
 use App\Http\Controllers\Api\HomeEngineeringApproachController;
 use App\Http\Controllers\Api\HomeContactSectionController;
 use App\Http\Controllers\Api\ContactInquiryController;
+use App\Http\Controllers\Api\SiteFooterController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -20,6 +21,8 @@ Route::get('/home/intro', [HomeIntroController::class, 'show']);
 Route::get('/home/featured-projects', HomeFeaturedProjectsController::class);
 
 Route::get('/home/capabilities', HomeCapabilitiesController::class);
+
+
 
 Route::get(
     '/home/engineering-approach',
@@ -35,3 +38,8 @@ Route::post(
     '/contact/inquiries',
     [ContactInquiryController::class, 'store']
 )->middleware('throttle:5,1');
+
+Route::get(
+    '/footer',
+    [SiteFooterController::class, 'index']
+);
