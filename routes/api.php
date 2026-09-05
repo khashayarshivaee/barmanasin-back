@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\HomeEngineeringApproachController;
 use App\Http\Controllers\Api\HomeContactSectionController;
 use App\Http\Controllers\Api\ContactInquiryController;
 use App\Http\Controllers\Api\SiteFooterController;
+use App\Http\Controllers\Api\HomeImageShowcaseController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -43,3 +44,5 @@ Route::get(
     '/footer',
     [SiteFooterController::class, 'index']
 );
+
+Route::get('/home/image-showcase', [HomeImageShowcaseController::class, 'index']);
