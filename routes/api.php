@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\HomeFeaturedProjectsController;
 use App\Http\Controllers\Api\HomeCapabilitiesController;
 use App\Http\Controllers\Api\HomeEngineeringApproachController;
 use App\Http\Controllers\Api\HomeContactSectionController;
+use App\Http\Controllers\Api\ContactInquiryController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -29,3 +30,8 @@ Route::get(
     '/home/contact',
     [HomeContactSectionController::class, 'index']
 );
+
+Route::post(
+    '/contact/inquiries',
+    [ContactInquiryController::class, 'store']
+)->middleware('throttle:5,1');
