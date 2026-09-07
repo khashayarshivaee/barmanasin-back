@@ -146,6 +146,12 @@ class EditUser extends EditRecord
                         'suspended_at' => now(),
                     ])->save();
 
+                    if ($user->mailbox) {
+                        $user->mailbox->forceFill([
+                            'status' => 'suspended',
+                        ])->save();
+                    }
+
                     Notification::make()
                         ->title('User suspended')
                         ->success()
@@ -175,6 +181,15 @@ class EditUser extends EditRecord
                         'is_active' => true,
                         'suspended_at' => null,
                     ])->save();
+
+                    if ($user->mailbox_enabled && $user->mailbox) {
+                        $user->mailbox->forceFill([
+                            'status' => $user->isActivated()
+                            && ! $user->must_change_password
+                                ? 'active'
+                                : 'pending',
+                        ])->save();
+                    }
 
                     Notification::make()
                         ->title('User reactivated')

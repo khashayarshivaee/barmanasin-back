@@ -119,6 +119,12 @@ class UserActivationController extends Controller
                 'activated_at' => now(),
             ])->save();
 
+            if ($user->mailbox_enabled && $user->mailbox) {
+                $user->mailbox->forceFill([
+                    'status' => 'active',
+                ])->save();
+            }
+
             return $user;
         });
 

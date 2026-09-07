@@ -15,6 +15,7 @@ class CreateUser extends CreateRecord
     protected static string $resource =
         UserResource::class;
 
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $username = Str::lower(
@@ -23,14 +24,17 @@ class CreateUser extends CreateRecord
 
         $email = "{$username}@barmanasin.com";
 
+
         $exists = User::query()
             ->where('email', $email)
             ->orWhere('mailbox_address', $email)
             ->exists();
 
+
         $mailboxExists = Mailbox::query()
             ->where('address', $email)
             ->exists();
+
 
         if ($exists || $mailboxExists) {
             throw ValidationException::withMessages([
@@ -39,40 +43,48 @@ class CreateUser extends CreateRecord
             ]);
         }
 
+
         unset($data['mailbox_username']);
 
+
         $data['email'] = $email;
+
 
         $data['mailbox_address'] =
             ($data['mailbox_enabled'] ?? true)
                 ? $email
                 : null;
 
+
         /*
          * Admin never chooses or sees the user's password.
-         * This placeholder becomes useless after activation.
+         * This temporary password is replaced during activation.
          */
         $data['password'] = Str::random(64);
 
+
         $data['activated_at'] = null;
+
         $data['suspended_at'] = null;
+
         $data['must_change_password'] = true;
-        $data['mailbox_external_id'] = null;
+
 
         return $data;
     }
+
 
     protected function afterCreate(): void
     {
         /** @var User $record */
         $record = $this->record;
 
+
         /*
-         * Register the mailbox in Barmanasin.
+         * Create local mailbox record.
          *
-         * The local mail engine will serve this mailbox.
-         * It remains pending until the mail infrastructure
-         * is ready to activate it.
+         * Mailbox remains pending until the user activates
+         * the account through the activation flow.
          */
         if (
             $record->mailbox_enabled
@@ -84,25 +96,34 @@ class CreateUser extends CreateRecord
                 2
             );
 
+
             Mailbox::query()->firstOrCreate(
                 [
                     'address' => $record->mailbox_address,
                 ],
                 [
                     'user_id' => $record->getKey(),
+
                     'local_part' => $localPart,
+
                     'domain' => $domain,
+
                     'provider' => 'local',
+
                     'external_id' => null,
+
                     'quota_mb' => $record->mailbox_quota_mb,
+
                     'used_storage_mb' => 0,
+
                     'status' => 'pending',
                 ]
             );
         }
 
+
         /*
-         * Generate one-time account activation access.
+         * Generate one-time activation link token.
          */
         $result = app(
             UserAccessTokenService::class
@@ -111,20 +132,23 @@ class CreateUser extends CreateRecord
             createdBy: auth()->user()
         );
 
+
         /*
-         * Raw token is never persisted.
-         * It survives only until the next request.
+         * Raw token exists only in session flash.
+         * It is never stored.
          */
         session()->flash(
             'new_user_activation_token',
             $result['token']
         );
 
+
         session()->flash(
             'new_user_activation_user_id',
             $record->getKey()
         );
     }
+
 
     protected function getRedirectUrl(): string
     {

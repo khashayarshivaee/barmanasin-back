@@ -21,7 +21,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'is_active',
     'mailbox_enabled',
     'mailbox_address',
-    'mailbox_external_id',
     'mailbox_quota_mb',
     'must_change_password',
     'activated_at',
@@ -46,12 +45,6 @@ class User extends Authenticatable implements FilamentUser
     |--------------------------------------------------------------------------
     | Filament Access
     |--------------------------------------------------------------------------
-    |
-    | Mail users are intentionally NOT allowed into the panel yet.
-    |
-    | We will enable them only after the dedicated mail workspace and
-    | resource-level permissions are implemented.
-    |
     */
 
     public function canAccessPanel(Panel $panel): bool
@@ -118,18 +111,26 @@ class User extends Authenticatable implements FilamentUser
     |--------------------------------------------------------------------------
     */
 
+    public function mailbox(): HasOne
+    {
+        return $this->hasOne(Mailbox::class);
+    }
+
+
     public function hasMailbox(): bool
     {
         return (bool) $this->mailbox_enabled
-            && filled($this->mailbox_address);
+            && $this->mailbox !== null;
     }
 
 
     public function mailboxIsReady(): bool
     {
         return $this->hasMailbox()
-            && filled($this->mailbox_external_id)
-            && $this->isActive();
+            && $this->mailbox->status === 'active'
+            && $this->isActive()
+            && $this->isActivated()
+            && ! $this->must_change_password;
     }
 
 
@@ -176,18 +177,16 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
 
             'is_active' => 'boolean',
+
             'mailbox_enabled' => 'boolean',
+
             'must_change_password' => 'boolean',
 
             'mailbox_quota_mb' => 'integer',
 
             'activated_at' => 'datetime',
+
             'suspended_at' => 'datetime',
         ];
-    }
-
-    public function mailbox(): HasOne
-    {
-        return $this->hasOne(Mailbox::class);
     }
 }
