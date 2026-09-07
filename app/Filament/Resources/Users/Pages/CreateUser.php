@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
+use App\Models\Mailbox;
 use App\Models\User;
 use App\Services\Auth\UserAccessTokenService;
 use Filament\Resources\Pages\CreateRecord;
@@ -28,7 +29,11 @@ class CreateUser extends CreateRecord
             ->orWhere('mailbox_address', $email)
             ->exists();
 
-        if ($exists) {
+        $mailboxExists = Mailbox::query()
+            ->where('address', $email)
+            ->exists();
+
+        if ($exists || $mailboxExists) {
             throw ValidationException::withMessages([
                 'mailbox_username' =>
                     'This company email address is already in use.',
@@ -45,10 +50,8 @@ class CreateUser extends CreateRecord
                 : null;
 
         /*
-         * The administrator never chooses or sees the user's password.
-         *
-         * A cryptographically random placeholder password is stored
-         * until the user activates the account and chooses their own.
+         * Admin never chooses or sees the user's password.
+         * This placeholder becomes useless after activation.
          */
         $data['password'] = Str::random(64);
 
@@ -69,6 +72,50 @@ class CreateUser extends CreateRecord
         /** @var User $record */
         $record = $this->record;
 
+        /*
+         * Create the local mailbox record.
+         *
+         * At this stage the mailbox is only registered locally.
+         * Stalwart provisioning will change its status from
+         * pending to active later.
+         */
+        if (
+            $record->mailbox_enabled
+            && filled($record->mailbox_address)
+        ) {
+            [$localPart, $domain] = explode(
+                '@',
+                $record->mailbox_address,
+                2
+            );
+
+            Mailbox::query()->firstOrCreate(
+                [
+                    'address' => $record->mailbox_address,
+                ],
+                [
+                    'user_id' => $record->getKey(),
+
+                    'local_part' => $localPart,
+
+                    'domain' => $domain,
+
+                    'provider' => 'stalwart',
+
+                    'external_id' => null,
+
+                    'quota_mb' => $record->mailbox_quota_mb,
+
+                    'used_storage_mb' => 0,
+
+                    'status' => 'pending',
+                ]
+            );
+        }
+
+        /*
+         * Generate one-time account activation access.
+         */
         $result = app(
             UserAccessTokenService::class
         )->issueActivationToken(
@@ -77,10 +124,8 @@ class CreateUser extends CreateRecord
         );
 
         /*
-         * The raw token must never be persisted.
-         *
-         * We keep it only in the session for the very next request.
-         * The Edit page will turn this into the one-time activation URL.
+         * Raw token is never persisted.
+         * It survives only until the next request.
          */
         session()->flash(
             'new_user_activation_token',
