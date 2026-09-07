@@ -15,7 +15,6 @@ class CreateUser extends CreateRecord
     protected static string $resource =
         UserResource::class;
 
-
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $username = Str::lower(
@@ -56,16 +55,12 @@ class CreateUser extends CreateRecord
         $data['password'] = Str::random(64);
 
         $data['activated_at'] = null;
-
         $data['suspended_at'] = null;
-
         $data['must_change_password'] = true;
-
         $data['mailbox_external_id'] = null;
 
         return $data;
     }
-
 
     protected function afterCreate(): void
     {
@@ -73,11 +68,11 @@ class CreateUser extends CreateRecord
         $record = $this->record;
 
         /*
-         * Create the local mailbox record.
+         * Register the mailbox in Barmanasin.
          *
-         * At this stage the mailbox is only registered locally.
-         * Stalwart provisioning will change its status from
-         * pending to active later.
+         * The local mail engine will serve this mailbox.
+         * It remains pending until the mail infrastructure
+         * is ready to activate it.
          */
         if (
             $record->mailbox_enabled
@@ -95,19 +90,12 @@ class CreateUser extends CreateRecord
                 ],
                 [
                     'user_id' => $record->getKey(),
-
                     'local_part' => $localPart,
-
                     'domain' => $domain,
-
-                    'provider' => 'stalwart',
-
+                    'provider' => 'local',
                     'external_id' => null,
-
                     'quota_mb' => $record->mailbox_quota_mb,
-
                     'used_storage_mb' => 0,
-
                     'status' => 'pending',
                 ]
             );
@@ -137,7 +125,6 @@ class CreateUser extends CreateRecord
             $record->getKey()
         );
     }
-
 
     protected function getRedirectUrl(): string
     {
