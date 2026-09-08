@@ -39,17 +39,27 @@ class MailMessageSeenController extends Controller
                 'required',
                 'boolean',
             ],
+
+            'folder' => [
+                'sometimes',
+                'string',
+                'in:INBOX,Archive,Trash,Sent,Drafts',
+            ],
         ]);
+
+        $folder = $validated['folder'] ?? 'INBOX';
 
         try {
             $message = $validated['seen']
                 ? $mailboxReader->markSeen(
                     $user->mailbox_address,
                     $uid,
+                    $folder,
                 )
                 : $mailboxReader->markUnseen(
                     $user->mailbox_address,
                     $uid,
+                    $folder,
                 );
         } catch (RuntimeException $exception) {
             report($exception);
@@ -61,7 +71,6 @@ class MailMessageSeenController extends Controller
 
         return response()->json([
             'message' => $message,
-
             'seen' => ! $message['unread'],
         ]);
     }

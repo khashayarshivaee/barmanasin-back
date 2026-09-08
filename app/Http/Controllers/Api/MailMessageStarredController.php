@@ -39,17 +39,27 @@ class MailMessageStarredController extends Controller
                 'required',
                 'boolean',
             ],
+
+            'folder' => [
+                'sometimes',
+                'string',
+                'in:INBOX,Archive,Trash,Sent,Drafts',
+            ],
         ]);
+
+        $folder = $validated['folder'] ?? 'INBOX';
 
         try {
             $message = $validated['starred']
                 ? $mailboxReader->markStarred(
                     $user->mailbox_address,
                     $uid,
+                    $folder,
                 )
                 : $mailboxReader->markUnstarred(
                     $user->mailbox_address,
                     $uid,
+                    $folder,
                 );
         } catch (RuntimeException $exception) {
             report($exception);
