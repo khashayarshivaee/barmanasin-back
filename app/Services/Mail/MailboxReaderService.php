@@ -189,20 +189,15 @@ class MailboxReaderService
 
     public function trashMessage(
         string $mailboxAddress,
-        string $uid,
+        string|int $uid,
         string $folder = 'INBOX',
     ): void {
-        $this->validateMailboxAddress(
+        $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
         );
 
-        $this->validateFolder(
-            $folder,
-        );
-
-        $this->validateUid(
-            $uid,
-        );
+        $folder = $this->normalizeFolder($folder);
+        $uid = $this->normalizeMessageUid($uid);
 
         if ($folder === 'Trash') {
             throw new RuntimeException(
@@ -210,7 +205,7 @@ class MailboxReaderService
             );
         }
 
-        $this->runReader([
+        $this->runReaderAction([
             'message-trash',
             $mailboxAddress,
             $folder,
