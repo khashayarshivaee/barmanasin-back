@@ -15,53 +15,17 @@ class MailboxReaderService
      */
     public function inbox(string $mailboxAddress): array
     {
-        $mailboxAddress = mb_strtolower(trim($mailboxAddress));
-
-        if (! preg_match(
-            '/^[a-z0-9._%+\-]+@barmanasin\.com$/',
+        $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
-        )) {
-            throw new RuntimeException(
-                'Invalid Barmanasin mailbox address.',
-            );
-        }
+        );
 
-        $result = Process::timeout(10)->run([
-            '/usr/bin/sudo',
-            '-n',
-            self::READER,
+        $messages = $this->runReader([
             'inbox-list',
             $mailboxAddress,
         ]);
 
-        if ($result->failed()) {
-            throw new RuntimeException(
-                'Unable to read mailbox.',
-            );
-        }
-
-        try {
-            $messages = json_decode(
-                $result->output(),
-                true,
-                512,
-                JSON_THROW_ON_ERROR,
-            );
-        } catch (JsonException $exception) {
-            throw new RuntimeException(
-                'Mailbox reader returned invalid JSON.',
-                previous: $exception,
-            );
-        }
-
-        if (! is_array($messages)) {
-            throw new RuntimeException(
-                'Mailbox reader returned an invalid response.',
-            );
-        }
-
         $normalized = array_map(
-            fn (array $message): array => $this->normalizeMessage($message),
+            fn (array $message): array => $this->normalizeInboxMessage($message),
             $messages,
         );
 
@@ -75,11 +39,118 @@ class MailboxReaderService
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function message(
+        string $mailboxAddress,
+        string|int $uid,
+    ): ?array {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $uid = (string) $uid;
+
+        if (! preg_match('/^[1-9][0-9]*$/', $uid)) {
+            throw new RuntimeException(
+                'Invalid message UID.',
+            );
+        }
+
+        $messages = $this->runReader([
+            'message-get',
+            $mailboxAddress,
+            $uid,
+        ]);
+
+        if ($messages === []) {
+            return null;
+        }
+
+        $message = $messages[0] ?? null;
+
+        if (! is_array($message)) {
+            return null;
+        }
+
+        return $this->normalizeDetailedMessage(
+            $message,
+        );
+    }
+
+    /**
+     * @param array<int, string> $arguments
+     * @return array<int, array<string, mixed>>
+     */
+    private function runReader(array $arguments): array
+    {
+        $result = Process::timeout(10)->run([
+            '/usr/bin/sudo',
+            '-n',
+            self::READER,
+            ...$arguments,
+        ]);
+
+        if ($result->failed()) {
+            throw new RuntimeException(
+                'Unable to read mailbox.',
+            );
+        }
+
+        try {
+            $payload = json_decode(
+                $result->output(),
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+        } catch (JsonException $exception) {
+            throw new RuntimeException(
+                'Mailbox reader returned invalid JSON.',
+                previous: $exception,
+            );
+        }
+
+        if (! is_array($payload)) {
+            throw new RuntimeException(
+                'Mailbox reader returned an invalid response.',
+            );
+        }
+
+        return array_values(
+            array_filter(
+                $payload,
+                static fn (mixed $item): bool => is_array($item),
+            ),
+        );
+    }
+
+    private function normalizeMailboxAddress(
+        string $mailboxAddress,
+    ): string {
+        $mailboxAddress = mb_strtolower(
+            trim($mailboxAddress),
+        );
+
+        if (! preg_match(
+            '/^[a-z0-9._%+\-]+@barmanasin\.com$/',
+            $mailboxAddress,
+        )) {
+            throw new RuntimeException(
+                'Invalid Barmanasin mailbox address.',
+            );
+        }
+
+        return $mailboxAddress;
+    }
+
+    /**
      * @param array<string, mixed> $message
      * @return array<string, mixed>
      */
-    private function normalizeMessage(array $message): array
-    {
+    private function normalizeInboxMessage(
+        array $message,
+    ): array {
         $flags = $this->normalizeFlags(
             (string) ($message['flags'] ?? ''),
         );
@@ -97,11 +168,7 @@ class MailboxReaderService
 
             'starred' => in_array('\\Flagged', $flags, true),
 
-            'from' => [
-                'name' => $from['name'],
-                'address' => $from['address'],
-                'raw' => $from['raw'],
-            ],
+            'from' => $from,
 
             'to' => trim(
                 (string) ($message['hdr.to'] ?? ''),
@@ -115,6 +182,73 @@ class MailboxReaderService
             'date' => trim(
                 (string) ($message['hdr.date'] ?? ''),
             ),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $message
+     * @return array<string, mixed>
+     */
+    private function normalizeDetailedMessage(
+        array $message,
+    ): array {
+        $flags = $this->normalizeFlags(
+            (string) ($message['flags'] ?? ''),
+        );
+
+        return [
+            'uid' => (string) ($message['uid'] ?? ''),
+
+            'flags' => $flags,
+
+            'unread' => ! in_array('\\Seen', $flags, true),
+
+            'starred' => in_array('\\Flagged', $flags, true),
+
+            'size' => (int) ($message['size.virtual'] ?? 0),
+
+            'from' => $this->parseAddress(
+                (string) ($message['hdr.from'] ?? ''),
+            ),
+
+            'to' => trim(
+                (string) ($message['hdr.to'] ?? ''),
+            ),
+
+            'cc' => trim(
+                (string) ($message['hdr.cc'] ?? ''),
+            ),
+
+            'reply_to' => trim(
+                (string) ($message['hdr.reply-to'] ?? ''),
+            ),
+
+            'subject' => $this->normalizeHeader(
+                (string) ($message['hdr.subject'] ?? ''),
+                '(No subject)',
+            ),
+
+            'date' => trim(
+                (string) ($message['hdr.date'] ?? ''),
+            ),
+
+            'message_id' => trim(
+                (string) ($message['hdr.message-id'] ?? ''),
+            ),
+
+            'body_structure' => trim(
+                (string) ($message['imap.bodystructure'] ?? ''),
+            ),
+
+            'body' => [
+                'text' => $this->normalizeBody(
+                    (string) ($message['body.1'] ?? ''),
+                ),
+
+                'html' => $this->normalizeBody(
+                    (string) ($message['body.2'] ?? ''),
+                ),
+            ],
         ];
     }
 
@@ -175,6 +309,7 @@ class MailboxReaderService
 
         return [
             'name' => $value,
+
             'address' => filter_var(
                 $value,
                 FILTER_VALIDATE_EMAIL,
@@ -195,5 +330,13 @@ class MailboxReaderService
         return $value !== ''
             ? $value
             : $fallback;
+    }
+
+    private function normalizeBody(
+        string $value,
+    ): string {
+        return trim(
+            str_replace("\r\n", "\n", $value),
+        );
     }
 }

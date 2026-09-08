@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SiteFooterController;
 use App\Http\Controllers\Api\HomeImageShowcaseController;
 use App\Http\Controllers\Api\MailAuthController;
 use App\Http\Controllers\Api\MailInboxController;
+use App\Http\Controllers\Api\MailMessageController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -63,3 +64,6 @@ Route::prefix('mail/auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mail/inbox', MailInboxController::class);
 });
+
+Route::get('/mail/messages/{uid}', MailMessageController::class)
+    ->whereNumber('uid');
