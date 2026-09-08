@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\MailMessageArchiveController;
 use App\Http\Controllers\Api\MailTrashController;
 use App\Http\Controllers\Api\MailMessageTrashController;
 use App\Http\Controllers\Api\MailSendController;
+use App\Http\Controllers\Api\MailAttachmentController;
+
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -110,3 +112,10 @@ Route::post(
     '/mail/send',
     MailSendController::class,
 )->middleware('throttle:10,1');
+
+
+Route::middleware('auth:sanctum')
+    ->post(
+        '/mail/attachments',
+        [MailAttachmentController::class,'store']
+    );
