@@ -10,6 +10,14 @@ class MailboxReaderService
 {
     private const READER = '/usr/local/bin/barmanasin-mail-reader';
 
+    private const ALLOWED_FOLDERS = [
+        'INBOX',
+        'Archive',
+        'Trash',
+        'Sent',
+        'Drafts',
+    ];
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -25,7 +33,8 @@ class MailboxReaderService
         ]);
 
         $normalized = array_map(
-            fn (array $message): array => $this->normalizeInboxMessage($message),
+            fn (array $message): array =>
+            $this->normalizeSummaryMessage($message),
             $messages,
         );
 
@@ -39,21 +48,57 @@ class MailboxReaderService
     }
 
     /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function starred(string $mailboxAddress): array
+    {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $messages = $this->runReaderJson([
+            'starred-list',
+            $mailboxAddress,
+        ]);
+
+        $normalized = array_map(
+            fn (array $message): array =>
+            $this->normalizeSummaryMessage($message),
+            $messages,
+        );
+
+        usort(
+            $normalized,
+            static function (array $a, array $b): int {
+                $aTime = strtotime((string) ($a['date'] ?? '')) ?: 0;
+                $bTime = strtotime((string) ($b['date'] ?? '')) ?: 0;
+
+                return $bTime <=> $aTime;
+            },
+        );
+
+        return $normalized;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function message(
         string $mailboxAddress,
         string|int $uid,
+        string $folder = 'INBOX',
     ): ?array {
         $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
         );
 
+        $folder = $this->normalizeFolder($folder);
         $uid = $this->normalizeMessageUid($uid);
 
         $messages = $this->runReaderJson([
             'message-get',
             $mailboxAddress,
+            $folder,
             $uid,
         ]);
 
@@ -78,10 +123,12 @@ class MailboxReaderService
     public function markSeen(
         string $mailboxAddress,
         string|int $uid,
+        string $folder = 'INBOX',
     ): array {
         return $this->updateSeenState(
             $mailboxAddress,
             $uid,
+            $folder,
             true,
         );
     }
@@ -92,10 +139,12 @@ class MailboxReaderService
     public function markUnseen(
         string $mailboxAddress,
         string|int $uid,
+        string $folder = 'INBOX',
     ): array {
         return $this->updateSeenState(
             $mailboxAddress,
             $uid,
+            $folder,
             false,
         );
     }
@@ -106,10 +155,12 @@ class MailboxReaderService
     public function markStarred(
         string $mailboxAddress,
         string|int $uid,
+        string $folder = 'INBOX',
     ): array {
         return $this->updateStarredState(
             $mailboxAddress,
             $uid,
+            $folder,
             true,
         );
     }
@@ -120,10 +171,12 @@ class MailboxReaderService
     public function markUnstarred(
         string $mailboxAddress,
         string|int $uid,
+        string $folder = 'INBOX',
     ): array {
         return $this->updateStarredState(
             $mailboxAddress,
             $uid,
+            $folder,
             false,
         );
     }
@@ -134,12 +187,14 @@ class MailboxReaderService
     private function updateSeenState(
         string $mailboxAddress,
         string|int $uid,
+        string $folder,
         bool $seen,
     ): array {
         $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
         );
 
+        $folder = $this->normalizeFolder($folder);
         $uid = $this->normalizeMessageUid($uid);
 
         $this->runReaderAction([
@@ -148,12 +203,14 @@ class MailboxReaderService
                 : 'message-unseen',
 
             $mailboxAddress,
+            $folder,
             $uid,
         ]);
 
         return $this->reloadMessageAfterUpdate(
             $mailboxAddress,
             $uid,
+            $folder,
         );
     }
 
@@ -163,12 +220,14 @@ class MailboxReaderService
     private function updateStarredState(
         string $mailboxAddress,
         string|int $uid,
+        string $folder,
         bool $starred,
     ): array {
         $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
         );
 
+        $folder = $this->normalizeFolder($folder);
         $uid = $this->normalizeMessageUid($uid);
 
         $this->runReaderAction([
@@ -177,12 +236,14 @@ class MailboxReaderService
                 : 'message-unstar',
 
             $mailboxAddress,
+            $folder,
             $uid,
         ]);
 
         return $this->reloadMessageAfterUpdate(
             $mailboxAddress,
             $uid,
+            $folder,
         );
     }
 
@@ -192,10 +253,12 @@ class MailboxReaderService
     private function reloadMessageAfterUpdate(
         string $mailboxAddress,
         string $uid,
+        string $folder,
     ): array {
         $message = $this->message(
             $mailboxAddress,
             $uid,
+            $folder,
         );
 
         if ($message === null) {
@@ -298,6 +361,24 @@ class MailboxReaderService
         return $mailboxAddress;
     }
 
+    private function normalizeFolder(
+        string $folder,
+    ): string {
+        $folder = trim($folder);
+
+        if (! in_array(
+            $folder,
+            self::ALLOWED_FOLDERS,
+            true,
+        )) {
+            throw new RuntimeException(
+                'Invalid mailbox folder.',
+            );
+        }
+
+        return $folder;
+    }
+
     private function normalizeMessageUid(
         string|int $uid,
     ): string {
@@ -316,7 +397,7 @@ class MailboxReaderService
      * @param array<string, mixed> $message
      * @return array<string, mixed>
      */
-    private function normalizeInboxMessage(
+    private function normalizeSummaryMessage(
         array $message,
     ): array {
         $flags = $this->normalizeFlags(
@@ -328,6 +409,10 @@ class MailboxReaderService
         );
 
         return [
+            'mailbox' => trim(
+                (string) ($message['mailbox'] ?? 'INBOX'),
+            ),
+
             'uid' => (string) ($message['uid'] ?? ''),
 
             'flags' => $flags,
@@ -365,6 +450,10 @@ class MailboxReaderService
         );
 
         return [
+            'mailbox' => trim(
+                (string) ($message['mailbox'] ?? 'INBOX'),
+            ),
+
             'uid' => (string) ($message['uid'] ?? ''),
 
             'flags' => $flags,

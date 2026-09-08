@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\MailInboxController;
 use App\Http\Controllers\Api\MailMessageController;
 use App\Http\Controllers\Api\MailMessageSeenController;
 use App\Http\Controllers\Api\MailMessageStarredController;
+use App\Http\Controllers\Api\MailStarredController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -79,3 +80,5 @@ Route::patch(
     '/mail/messages/{uid}/starred',
     MailMessageStarredController::class,
 )->whereNumber('uid');
+
+Route::get('/starred', MailStarredController::class);
