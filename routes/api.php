@@ -81,4 +81,4 @@ Route::patch(
     MailMessageStarredController::class,
 )->whereNumber('uid');
 
-Route::get('/starred', MailStarredController::class);
+Route::get('/mail/starred', MailStarredController::class);
