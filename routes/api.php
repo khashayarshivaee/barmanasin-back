@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\MailMessageController;
 use App\Http\Controllers\Api\MailMessageSeenController;
 use App\Http\Controllers\Api\MailMessageStarredController;
 use App\Http\Controllers\Api\MailStarredController;
+use App\Http\Controllers\Api\MailArchiveController;
+use App\Http\Controllers\Api\MailMessageArchiveController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -82,3 +84,11 @@ Route::patch(
 )->whereNumber('uid');
 
 Route::get('/mail/starred', MailStarredController::class);
+
+
+Route::get('/archive', MailArchiveController::class);
+
+Route::patch(
+    '/messages/{uid}/archive',
+    MailMessageArchiveController::class,
+)->whereNumber('uid');

@@ -23,28 +23,10 @@ class MailboxReaderService
      */
     public function inbox(string $mailboxAddress): array
     {
-        $mailboxAddress = $this->normalizeMailboxAddress(
+        return $this->listMessages(
             $mailboxAddress,
-        );
-
-        $messages = $this->runReaderJson([
             'inbox-list',
-            $mailboxAddress,
-        ]);
-
-        $normalized = array_map(
-            fn (array $message): array =>
-            $this->normalizeSummaryMessage($message),
-            $messages,
         );
-
-        usort(
-            $normalized,
-            static fn (array $a, array $b): int =>
-                (int) $b['uid'] <=> (int) $a['uid'],
-        );
-
-        return $normalized;
     }
 
     /**
@@ -52,32 +34,22 @@ class MailboxReaderService
      */
     public function starred(string $mailboxAddress): array
     {
-        $mailboxAddress = $this->normalizeMailboxAddress(
+        return $this->listMessages(
             $mailboxAddress,
-        );
-
-        $messages = $this->runReaderJson([
             'starred-list',
+            true,
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function archive(string $mailboxAddress): array
+    {
+        return $this->listMessages(
             $mailboxAddress,
-        ]);
-
-        $normalized = array_map(
-            fn (array $message): array =>
-            $this->normalizeSummaryMessage($message),
-            $messages,
+            'archive-list',
         );
-
-        usort(
-            $normalized,
-            static function (array $a, array $b): int {
-                $aTime = strtotime((string) ($a['date'] ?? '')) ?: 0;
-                $bTime = strtotime((string) ($b['date'] ?? '')) ?: 0;
-
-                return $bTime <=> $aTime;
-            },
-        );
-
-        return $normalized;
     }
 
     /**
@@ -181,6 +153,83 @@ class MailboxReaderService
         );
     }
 
+    public function archiveMessage(
+        string $mailboxAddress,
+        string|int $uid,
+        string $folder = 'INBOX',
+    ): void {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $folder = $this->normalizeFolder($folder);
+        $uid = $this->normalizeMessageUid($uid);
+
+        if ($folder === 'Archive') {
+            throw new RuntimeException(
+                'Message is already archived.',
+            );
+        }
+
+        $this->runReaderAction([
+            'message-archive',
+            $mailboxAddress,
+            $folder,
+            $uid,
+        ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function listMessages(
+        string $mailboxAddress,
+        string $action,
+        bool $sortByDate = false,
+    ): array {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $messages = $this->runReaderJson([
+            $action,
+            $mailboxAddress,
+        ]);
+
+        $normalized = array_map(
+            fn (array $message): array =>
+            $this->normalizeSummaryMessage($message),
+            $messages,
+        );
+
+        if ($sortByDate) {
+            usort(
+                $normalized,
+                static function (array $a, array $b): int {
+                    $aTime = strtotime(
+                        (string) ($a['date'] ?? ''),
+                    ) ?: 0;
+
+                    $bTime = strtotime(
+                        (string) ($b['date'] ?? ''),
+                    ) ?: 0;
+
+                    return $bTime <=> $aTime;
+                },
+            );
+
+            return $normalized;
+        }
+
+        usort(
+            $normalized,
+            static fn (array $a, array $b): int =>
+                (int) $b['uid'] <=> (int) $a['uid'],
+        );
+
+        return $normalized;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -201,7 +250,6 @@ class MailboxReaderService
             $seen
                 ? 'message-seen'
                 : 'message-unseen',
-
             $mailboxAddress,
             $folder,
             $uid,
@@ -234,7 +282,6 @@ class MailboxReaderService
             $starred
                 ? 'message-star'
                 : 'message-unstar',
-
             $mailboxAddress,
             $folder,
             $uid,
@@ -304,7 +351,8 @@ class MailboxReaderService
         return array_values(
             array_filter(
                 $payload,
-                static fn (mixed $item): bool => is_array($item),
+                static fn (mixed $item): bool =>
+                is_array($item),
             ),
         );
     }
@@ -417,9 +465,17 @@ class MailboxReaderService
 
             'flags' => $flags,
 
-            'unread' => ! in_array('\\Seen', $flags, true),
+            'unread' => ! in_array(
+                '\\Seen',
+                $flags,
+                true,
+            ),
 
-            'starred' => in_array('\\Flagged', $flags, true),
+            'starred' => in_array(
+                '\\Flagged',
+                $flags,
+                true,
+            ),
 
             'from' => $from,
 
@@ -458,11 +514,21 @@ class MailboxReaderService
 
             'flags' => $flags,
 
-            'unread' => ! in_array('\\Seen', $flags, true),
+            'unread' => ! in_array(
+                '\\Seen',
+                $flags,
+                true,
+            ),
 
-            'starred' => in_array('\\Flagged', $flags, true),
+            'starred' => in_array(
+                '\\Flagged',
+                $flags,
+                true,
+            ),
 
-            'size' => (int) ($message['size.virtual'] ?? 0),
+            'size' => (int) (
+                $message['size.virtual'] ?? 0
+            ),
 
             'from' => $this->parseAddress(
                 (string) ($message['hdr.from'] ?? ''),
@@ -494,7 +560,9 @@ class MailboxReaderService
             ),
 
             'body_structure' => trim(
-                (string) ($message['imap.bodystructure'] ?? ''),
+                (string) (
+                    $message['imap.bodystructure'] ?? ''
+                ),
             ),
 
             'body' => [
@@ -547,11 +615,16 @@ class MailboxReaderService
                 $matches,
             )
         ) {
-            $address = trim($matches[2]);
+            $address = trim(
+                $matches[2],
+            );
 
             $name = trim(
                 isset($matches[1])
-                    ? trim($matches[1], "\" \t\n\r\0\x0B")
+                    ? trim(
+                    $matches[1],
+                    "\" \t\n\r\0\x0B",
+                )
                     : '',
             );
 
@@ -595,7 +668,11 @@ class MailboxReaderService
         string $value,
     ): string {
         return trim(
-            str_replace("\r\n", "\n", $value),
+            str_replace(
+                "\r\n",
+                "\n",
+                $value,
+            ),
         );
     }
 }
