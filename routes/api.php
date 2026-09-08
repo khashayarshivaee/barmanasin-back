@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\MailArchiveController;
 use App\Http\Controllers\Api\MailMessageArchiveController;
 use App\Http\Controllers\Api\MailTrashController;
 use App\Http\Controllers\Api\MailMessageTrashController;
+use App\Http\Controllers\Api\MailSendController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -104,3 +105,8 @@ Route::patch(
     '/mail/messages/{uid}/trash',
     MailMessageTrashController::class,
 )->whereNumber('uid');
+
+Route::post(
+    '/mail/send',
+    MailSendController::class,
+)->middleware('throttle:10,1');
