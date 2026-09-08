@@ -52,6 +52,14 @@ class MailboxReaderService
         );
     }
 
+    public function trash(string $mailboxAddress): array
+    {
+        return $this->listMessages(
+            $mailboxAddress,
+            'trash-list',
+        );
+    }
+
     /**
      * @return array<string, mixed>|null
      */
@@ -173,6 +181,37 @@ class MailboxReaderService
 
         $this->runReaderAction([
             'message-archive',
+            $mailboxAddress,
+            $folder,
+            $uid,
+        ]);
+    }
+
+    public function trashMessage(
+        string $mailboxAddress,
+        string $uid,
+        string $folder = 'INBOX',
+    ): void {
+        $this->validateMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $this->validateFolder(
+            $folder,
+        );
+
+        $this->validateUid(
+            $uid,
+        );
+
+        if ($folder === 'Trash') {
+            throw new RuntimeException(
+                'Message is already in Trash.',
+            );
+        }
+
+        $this->runReader([
+            'message-trash',
             $mailboxAddress,
             $folder,
             $uid,
