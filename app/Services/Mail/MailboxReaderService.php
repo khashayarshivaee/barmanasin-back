@@ -103,6 +103,34 @@ class MailboxReaderService
     /**
      * @return array<string, mixed>
      */
+    public function markStarred(
+        string $mailboxAddress,
+        string|int $uid,
+    ): array {
+        return $this->updateStarredState(
+            $mailboxAddress,
+            $uid,
+            true,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function markUnstarred(
+        string $mailboxAddress,
+        string|int $uid,
+    ): array {
+        return $this->updateStarredState(
+            $mailboxAddress,
+            $uid,
+            false,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function updateSeenState(
         string $mailboxAddress,
         string|int $uid,
@@ -123,6 +151,48 @@ class MailboxReaderService
             $uid,
         ]);
 
+        return $this->reloadMessageAfterUpdate(
+            $mailboxAddress,
+            $uid,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function updateStarredState(
+        string $mailboxAddress,
+        string|int $uid,
+        bool $starred,
+    ): array {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $uid = $this->normalizeMessageUid($uid);
+
+        $this->runReaderAction([
+            $starred
+                ? 'message-star'
+                : 'message-unstar',
+
+            $mailboxAddress,
+            $uid,
+        ]);
+
+        return $this->reloadMessageAfterUpdate(
+            $mailboxAddress,
+            $uid,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function reloadMessageAfterUpdate(
+        string $mailboxAddress,
+        string $uid,
+    ): array {
         $message = $this->message(
             $mailboxAddress,
             $uid,
@@ -130,7 +200,7 @@ class MailboxReaderService
 
         if ($message === null) {
             throw new RuntimeException(
-                'Message not found after updating seen state.',
+                'Message not found after mailbox update.',
             );
         }
 
