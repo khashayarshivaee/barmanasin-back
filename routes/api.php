@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\HomeContactSectionController;
 use App\Http\Controllers\Api\ContactInquiryController;
 use App\Http\Controllers\Api\SiteFooterController;
 use App\Http\Controllers\Api\HomeImageShowcaseController;
+use App\Http\Controllers\Api\MailAuthController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -46,3 +47,14 @@ Route::get(
 );
 
 Route::get('/home/image-showcase', [HomeImageShowcaseController::class, 'index']);
+
+Route::prefix('mail/auth')->group(function () {
+    Route::post('/login', [MailAuthController::class, 'login'])
+        ->middleware('throttle:5,1');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [MailAuthController::class, 'me']);
+
+        Route::post('/logout', [MailAuthController::class, 'logout']);
+    });
+});
