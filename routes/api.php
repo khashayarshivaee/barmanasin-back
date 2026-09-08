@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ContactInquiryController;
 use App\Http\Controllers\Api\SiteFooterController;
 use App\Http\Controllers\Api\HomeImageShowcaseController;
 use App\Http\Controllers\Api\MailAuthController;
+use App\Http\Controllers\Api\MailInboxController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -57,4 +58,8 @@ Route::prefix('mail/auth')->group(function () {
 
         Route::post('/logout', [MailAuthController::class, 'logout']);
     });
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/mail/inbox', MailInboxController::class);
 });
