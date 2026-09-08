@@ -86,9 +86,9 @@ Route::patch(
 Route::get('/mail/starred', MailStarredController::class);
 
 
-Route::get('/archive', MailArchiveController::class);
+Route::get('/mail/archive', MailArchiveController::class);
 
 Route::patch(
-    '/messages/{uid}/archive',
+    '/mail/messages/{uid}/archive',
     MailMessageArchiveController::class,
 )->whereNumber('uid');
