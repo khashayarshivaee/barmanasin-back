@@ -19,7 +19,7 @@ class MailboxReaderService
             $mailboxAddress,
         );
 
-        $messages = $this->runReader([
+        $messages = $this->runReaderJson([
             'inbox-list',
             $mailboxAddress,
         ]);
@@ -49,15 +49,9 @@ class MailboxReaderService
             $mailboxAddress,
         );
 
-        $uid = (string) $uid;
+        $uid = $this->normalizeMessageUid($uid);
 
-        if (! preg_match('/^[1-9][0-9]*$/', $uid)) {
-            throw new RuntimeException(
-                'Invalid message UID.',
-            );
-        }
-
-        $messages = $this->runReader([
+        $messages = $this->runReaderJson([
             'message-get',
             $mailboxAddress,
             $uid,
@@ -79,27 +73,84 @@ class MailboxReaderService
     }
 
     /**
-     * @param array<int, string> $arguments
-     * @return array<int, array<string, mixed>>
+     * @return array<string, mixed>
      */
-    private function runReader(array $arguments): array
-    {
-        $result = Process::timeout(10)->run([
-            '/usr/bin/sudo',
-            '-n',
-            self::READER,
-            ...$arguments,
+    public function markSeen(
+        string $mailboxAddress,
+        string|int $uid,
+    ): array {
+        return $this->updateSeenState(
+            $mailboxAddress,
+            $uid,
+            true,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function markUnseen(
+        string $mailboxAddress,
+        string|int $uid,
+    ): array {
+        return $this->updateSeenState(
+            $mailboxAddress,
+            $uid,
+            false,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function updateSeenState(
+        string $mailboxAddress,
+        string|int $uid,
+        bool $seen,
+    ): array {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $uid = $this->normalizeMessageUid($uid);
+
+        $this->runReaderAction([
+            $seen
+                ? 'message-seen'
+                : 'message-unseen',
+
+            $mailboxAddress,
+            $uid,
         ]);
 
-        if ($result->failed()) {
+        $message = $this->message(
+            $mailboxAddress,
+            $uid,
+        );
+
+        if ($message === null) {
             throw new RuntimeException(
-                'Unable to read mailbox.',
+                'Message not found after updating seen state.',
             );
         }
 
+        return $message;
+    }
+
+    /**
+     * @param array<int, string> $arguments
+     * @return array<int, array<string, mixed>>
+     */
+    private function runReaderJson(
+        array $arguments,
+    ): array {
+        $result = $this->runReader(
+            $arguments,
+        );
+
         try {
             $payload = json_decode(
-                $result->output(),
+                $result,
                 true,
                 512,
                 JSON_THROW_ON_ERROR,
@@ -125,6 +176,39 @@ class MailboxReaderService
         );
     }
 
+    /**
+     * @param array<int, string> $arguments
+     */
+    private function runReaderAction(
+        array $arguments,
+    ): void {
+        $this->runReader(
+            $arguments,
+        );
+    }
+
+    /**
+     * @param array<int, string> $arguments
+     */
+    private function runReader(
+        array $arguments,
+    ): string {
+        $result = Process::timeout(10)->run([
+            '/usr/bin/sudo',
+            '-n',
+            self::READER,
+            ...$arguments,
+        ]);
+
+        if ($result->failed()) {
+            throw new RuntimeException(
+                'Unable to read or update mailbox.',
+            );
+        }
+
+        return $result->output();
+    }
+
     private function normalizeMailboxAddress(
         string $mailboxAddress,
     ): string {
@@ -142,6 +226,20 @@ class MailboxReaderService
         }
 
         return $mailboxAddress;
+    }
+
+    private function normalizeMessageUid(
+        string|int $uid,
+    ): string {
+        $uid = (string) $uid;
+
+        if (! preg_match('/^[1-9][0-9]*$/', $uid)) {
+            throw new RuntimeException(
+                'Invalid message UID.',
+            );
+        }
+
+        return $uid;
     }
 
     /**
@@ -255,8 +353,9 @@ class MailboxReaderService
     /**
      * @return array<int, string>
      */
-    private function normalizeFlags(string $flags): array
-    {
+    private function normalizeFlags(
+        string $flags,
+    ): array {
         $flags = trim($flags);
 
         if ($flags === '') {
@@ -277,8 +376,9 @@ class MailboxReaderService
      *     raw: string
      * }
      */
-    private function parseAddress(string $value): array
-    {
+    private function parseAddress(
+        string $value,
+    ): array {
         $value = trim($value);
 
         if (
