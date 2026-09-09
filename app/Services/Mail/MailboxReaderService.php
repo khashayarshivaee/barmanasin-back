@@ -5,7 +5,7 @@ namespace App\Services\Mail;
 use Illuminate\Support\Facades\Process;
 use JsonException;
 use RuntimeException;
-
+use App\Services\Mail\ImapBodyStructureParser;
 class MailboxReaderService
 {
     private const READER = '/usr/local/bin/barmanasin-mail-reader';
@@ -81,6 +81,7 @@ class MailboxReaderService
         string $mailboxAddress,
         string|int $uid,
         string $folder = 'INBOX',
+        ImapBodyStructureParser $parser = new ImapBodyStructureParser(),
     ): ?array {
         $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
@@ -108,6 +109,7 @@ class MailboxReaderService
 
         return $this->normalizeDetailedMessage(
             $message,
+            $parser,
         );
     }
 
@@ -548,6 +550,7 @@ class MailboxReaderService
      */
     private function normalizeDetailedMessage(
         array $message,
+        ImapBodyStructureParser $parser,
     ): array {
         $flags = $this->normalizeFlags(
             (string) ($message['flags'] ?? ''),
@@ -620,7 +623,7 @@ class MailboxReaderService
 
                 'html' => '',
             ],
-            'attachments' => $this->extractAttachments(
+            'attachments' => $parser->attachments(
                 (string) (
                     $message['imap.bodystructure'] ?? ''
                 ),
