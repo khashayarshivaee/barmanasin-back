@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\MailTrashController;
 use App\Http\Controllers\Api\MailMessageTrashController;
 use App\Http\Controllers\Api\MailSendController;
 use App\Http\Controllers\Api\MailAttachmentController;
+use App\Http\Controllers\Api\MailSentController;
 
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
@@ -119,3 +120,7 @@ Route::middleware('auth:sanctum')
         '/mail/attachments',
         [MailAttachmentController::class,'store']
     );
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/mail/sent', MailSentController::class);
+});

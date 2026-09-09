@@ -32,6 +32,17 @@ class MailboxReaderService
     /**
      * @return array<int, array<string, mixed>>
      */
+    public function sent(string $mailboxAddress): array
+    {
+        return $this->listMessages(
+            $mailboxAddress,
+            'sent-list',
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function starred(string $mailboxAddress): array
     {
         return $this->listMessages(
