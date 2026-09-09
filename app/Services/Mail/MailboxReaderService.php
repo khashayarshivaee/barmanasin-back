@@ -113,6 +113,38 @@ class MailboxReaderService
         );
     }
 
+    public function messagePart(
+        string $mailboxAddress,
+        string|int $uid,
+        string $part,
+        string $folder = 'INBOX',
+    ): string {
+        $mailboxAddress = $this->normalizeMailboxAddress(
+            $mailboxAddress,
+        );
+
+        $folder = $this->normalizeFolder($folder);
+        $uid = $this->normalizeMessageUid($uid);
+
+        if (! preg_match('/^[0-9]+(?:\.[0-9]+)*$/', $part)) {
+            throw new RuntimeException(
+                'Invalid message part.',
+            );
+        }
+
+        $result = $this->runReaderJson([
+            'message-part-get',
+            $mailboxAddress,
+            $folder,
+            $uid,
+            $part,
+        ]);
+
+        return (string) (
+            $result[0]["body.$part"] ?? ''
+        );
+    }
+
     /**
      * @return array<string, mixed>
      */

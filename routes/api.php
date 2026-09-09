@@ -24,6 +24,8 @@ use App\Http\Controllers\Api\MailMessageTrashController;
 use App\Http\Controllers\Api\MailSendController;
 use App\Http\Controllers\Api\MailAttachmentController;
 use App\Http\Controllers\Api\MailSentController;
+use App\Http\Controllers\Api\MailAttachmentDownloadController;
+
 
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
@@ -36,7 +38,6 @@ Route::get('/home/intro', [HomeIntroController::class, 'show']);
 Route::get('/home/featured-projects', HomeFeaturedProjectsController::class);
 
 Route::get('/home/capabilities', HomeCapabilitiesController::class);
-
 
 
 Route::get(
@@ -54,73 +55,119 @@ Route::post(
     [ContactInquiryController::class, 'store']
 )->middleware('throttle:5,1');
 
+
 Route::get(
     '/footer',
     [SiteFooterController::class, 'index']
 );
 
-Route::get('/home/image-showcase', [HomeImageShowcaseController::class, 'index']);
+
+Route::get(
+    '/home/image-showcase',
+    [HomeImageShowcaseController::class, 'index']
+);
+
+
 
 Route::prefix('mail/auth')->group(function () {
+
     Route::post('/login', [MailAuthController::class, 'login'])
         ->middleware('throttle:5,1');
 
+
     Route::middleware('auth:sanctum')->group(function () {
+
         Route::get('/me', [MailAuthController::class, 'me']);
 
         Route::post('/logout', [MailAuthController::class, 'logout']);
+
     });
+
 });
+
+
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/mail/inbox', MailInboxController::class);
+
+    Route::get(
+        '/mail/inbox',
+        MailInboxController::class
+    );
+
+
+    Route::get(
+        '/mail/sent',
+        MailSentController::class
+    );
+
+
+    Route::post(
+        '/mail/attachments',
+        [MailAttachmentController::class, 'store']
+    );
+
+
+    Route::get(
+        '/mail/messages/{uid}/attachments/{part}',
+        MailAttachmentDownloadController::class,
+    )->whereNumber('uid');
+
 });
 
-Route::get('/mail/messages/{uid}', MailMessageController::class)
-    ->whereNumber('uid');
+
+
+Route::get(
+    '/mail/messages/{uid}',
+    MailMessageController::class
+)->whereNumber('uid');
+
 
 Route::patch(
     '/mail/messages/{uid}/seen',
     MailMessageSeenController::class,
 )->whereNumber('uid');
 
+
 Route::patch(
     '/mail/messages/{uid}/starred',
     MailMessageStarredController::class,
 )->whereNumber('uid');
 
-Route::get('/mail/starred', MailStarredController::class);
+
+Route::get(
+    '/mail/starred',
+    MailStarredController::class
+);
 
 
-Route::get('/mail/archive', MailArchiveController::class);
+
+Route::get(
+    '/mail/archive',
+    MailArchiveController::class
+);
+
 
 Route::patch(
     '/mail/messages/{uid}/archive',
     MailMessageArchiveController::class,
 )->whereNumber('uid');
 
+
+
 Route::get(
     '/mail/trash',
     MailTrashController::class,
 );
+
 
 Route::patch(
     '/mail/messages/{uid}/trash',
     MailMessageTrashController::class,
 )->whereNumber('uid');
 
+
+
 Route::post(
     '/mail/send',
     MailSendController::class,
 )->middleware('throttle:10,1');
-
-
-Route::middleware('auth:sanctum')
-    ->post(
-        '/mail/attachments',
-        [MailAttachmentController::class,'store']
-    );
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/mail/sent', MailSentController::class);
-});
