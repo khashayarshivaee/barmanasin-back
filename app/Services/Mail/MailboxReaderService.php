@@ -63,6 +63,9 @@ class MailboxReaderService
         );
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function trash(string $mailboxAddress): array
     {
         return $this->listMessages(
@@ -615,10 +618,13 @@ class MailboxReaderService
                     (string) ($message['body.1'] ?? ''),
                 ),
 
-                'html' => $this->normalizeBody(
-                    (string) ($message['body.2'] ?? ''),
-                ),
+                'html' => '',
             ],
+            'attachments' => $this->extractAttachments(
+                (string) (
+                    $message['imap.bodystructure'] ?? ''
+                ),
+            ),
         ];
     }
 
@@ -719,5 +725,33 @@ class MailboxReaderService
                 $value,
             ),
         );
+    }
+    private function extractAttachments(
+        string $structure,
+    ): array {
+        if (trim($structure) === '') {
+            return [];
+        }
+
+        $attachments = [];
+
+        if (
+            preg_match(
+                '/"image"\s+"([^"]+)".*?"base64"\s+([0-9]+).*?"filename\*"\s+"utf-8\'\'([^"]+)"/s',
+                $structure,
+                $matches,
+            )
+        ) {
+            $attachments[] = [
+                'part' => '2',
+                'filename' => urldecode(
+                    $matches[3],
+                ),
+                'content_type' => 'image/' . $matches[1],
+                'size' => (int) $matches[2],
+            ];
+        }
+
+        return $attachments;
     }
 }
