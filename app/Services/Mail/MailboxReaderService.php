@@ -5,7 +5,7 @@ namespace App\Services\Mail;
 use Illuminate\Support\Facades\Process;
 use JsonException;
 use RuntimeException;
-use App\Services\Mail\ImapBodyStructureParser;
+
 class MailboxReaderService
 {
     private const READER = '/usr/local/bin/barmanasin-mail-reader';
@@ -17,6 +17,11 @@ class MailboxReaderService
         'Sent',
         'Drafts',
     ];
+
+    public function __construct(
+        private readonly ImapBodyStructureParser $bodyStructureParser,
+    ) {
+    }
 
     /**
      * @return array<int, array<string, mixed>>
@@ -81,7 +86,6 @@ class MailboxReaderService
         string $mailboxAddress,
         string|int $uid,
         string $folder = 'INBOX',
-        ImapBodyStructureParser $parser = new ImapBodyStructureParser(),
     ): ?array {
         $mailboxAddress = $this->normalizeMailboxAddress(
             $mailboxAddress,
@@ -107,9 +111,34 @@ class MailboxReaderService
             return null;
         }
 
+        $bodyStructure = trim(
+            (string) (
+                $message['imap.bodystructure'] ?? ''
+            ),
+        );
+
+        $parts =
+            $this->bodyStructureParser->parts(
+                $bodyStructure,
+            );
+
+        $body =
+            $this->loadMessageBody(
+                $mailboxAddress,
+                $uid,
+                $folder,
+                $parts,
+            );
+
+        $attachments =
+            $this->bodyStructureParser->attachments(
+                $bodyStructure,
+            );
+
         return $this->normalizeDetailedMessage(
             $message,
-            $parser,
+            $body,
+            $attachments,
         );
     }
 
@@ -119,14 +148,27 @@ class MailboxReaderService
         string $part,
         string $folder = 'INBOX',
     ): string {
-        $mailboxAddress = $this->normalizeMailboxAddress(
-            $mailboxAddress,
-        );
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
 
-        $folder = $this->normalizeFolder($folder);
-        $uid = $this->normalizeMessageUid($uid);
+        $folder =
+            $this->normalizeFolder(
+                $folder,
+            );
 
-        if (! preg_match('/^[0-9]+(?:\.[0-9]+)*$/', $part)) {
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
+
+        if (
+            ! preg_match(
+                '/^[1-9][0-9]*(?:\.[1-9][0-9]*)*$/',
+                $part,
+            )
+        ) {
             throw new RuntimeException(
                 'Invalid message part.',
             );
@@ -214,12 +256,20 @@ class MailboxReaderService
         string|int $uid,
         string $folder = 'INBOX',
     ): void {
-        $mailboxAddress = $this->normalizeMailboxAddress(
-            $mailboxAddress,
-        );
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
 
-        $folder = $this->normalizeFolder($folder);
-        $uid = $this->normalizeMessageUid($uid);
+        $folder =
+            $this->normalizeFolder(
+                $folder,
+            );
+
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
 
         if ($folder === 'Archive') {
             throw new RuntimeException(
@@ -240,12 +290,20 @@ class MailboxReaderService
         string|int $uid,
         string $folder = 'INBOX',
     ): void {
-        $mailboxAddress = $this->normalizeMailboxAddress(
-            $mailboxAddress,
-        );
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
 
-        $folder = $this->normalizeFolder($folder);
-        $uid = $this->normalizeMessageUid($uid);
+        $folder =
+            $this->normalizeFolder(
+                $folder,
+            );
+
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
 
         if ($folder === 'Trash') {
             throw new RuntimeException(
@@ -262,6 +320,144 @@ class MailboxReaderService
     }
 
     /**
+     * @param array<int, array<string, mixed>> $parts
+     * @return array{
+     *     text: string,
+     *     html: string
+     * }
+     */
+    private function loadMessageBody(
+        string $mailboxAddress,
+        string $uid,
+        string $folder,
+        array $parts,
+    ): array {
+        $text = '';
+        $html = '';
+
+        foreach ($parts as $part) {
+            $contentType = strtolower(
+                (string) (
+                    $part['content_type'] ?? ''
+                ),
+            );
+
+            $disposition = strtolower(
+                (string) (
+                    $part['disposition'] ?? ''
+                ),
+            );
+
+            $filename = trim(
+                (string) (
+                    $part['filename'] ?? ''
+                ),
+            );
+
+            if (
+                $disposition === 'attachment'
+                || $filename !== ''
+            ) {
+                continue;
+            }
+
+            if (
+                $contentType !== 'text/plain'
+                && $contentType !== 'text/html'
+            ) {
+                continue;
+            }
+
+            $partNumber = (string) (
+                $part['part'] ?? ''
+            );
+
+            if ($partNumber === '') {
+                continue;
+            }
+
+            $raw = $this->messagePart(
+                $mailboxAddress,
+                $uid,
+                $partNumber,
+                $folder,
+            );
+
+            $decoded =
+                $this->decodePartContent(
+                    $raw,
+                    (string) (
+                        $part['encoding'] ?? ''
+                    ),
+                );
+
+            if (
+                $contentType === 'text/plain'
+                && $text === ''
+            ) {
+                $text =
+                    $this->normalizeBody(
+                        $decoded,
+                    );
+            }
+
+            if (
+                $contentType === 'text/html'
+                && $html === ''
+            ) {
+                $html =
+                    $this->normalizeBody(
+                        $decoded,
+                    );
+            }
+
+            if (
+                $text !== ''
+                && $html !== ''
+            ) {
+                break;
+            }
+        }
+
+        return [
+            'text' => $text,
+            'html' => $html,
+        ];
+    }
+
+    private function decodePartContent(
+        string $content,
+        string $encoding,
+    ): string {
+        $encoding = strtolower(
+            trim($encoding),
+        );
+
+        if ($encoding === 'base64') {
+            $decoded = base64_decode(
+                preg_replace(
+                    '/\s+/',
+                    '',
+                    $content,
+                ) ?? $content,
+                true,
+            );
+
+            return $decoded !== false
+                ? $decoded
+                : $content;
+        }
+
+        if ($encoding === 'quoted-printable') {
+            return quoted_printable_decode(
+                $content,
+            );
+        }
+
+        return $content;
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     private function listMessages(
@@ -269,9 +465,10 @@ class MailboxReaderService
         string $action,
         bool $sortByDate = false,
     ): array {
-        $mailboxAddress = $this->normalizeMailboxAddress(
-            $mailboxAddress,
-        );
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
 
         $messages = $this->runReaderJson([
             $action,
@@ -280,20 +477,29 @@ class MailboxReaderService
 
         $normalized = array_map(
             fn (array $message): array =>
-            $this->normalizeSummaryMessage($message),
+            $this->normalizeSummaryMessage(
+                $message,
+            ),
             $messages,
         );
 
         if ($sortByDate) {
             usort(
                 $normalized,
-                static function (array $a, array $b): int {
+                static function (
+                    array $a,
+                    array $b,
+                ): int {
                     $aTime = strtotime(
-                        (string) ($a['date'] ?? ''),
+                        (string) (
+                            $a['date'] ?? ''
+                        ),
                     ) ?: 0;
 
                     $bTime = strtotime(
-                        (string) ($b['date'] ?? ''),
+                        (string) (
+                            $b['date'] ?? ''
+                        ),
                     ) ?: 0;
 
                     return $bTime <=> $aTime;
@@ -305,8 +511,13 @@ class MailboxReaderService
 
         usort(
             $normalized,
-            static fn (array $a, array $b): int =>
-                (int) $b['uid'] <=> (int) $a['uid'],
+            static fn (
+                array $a,
+                array $b,
+            ): int =>
+                (int) $b['uid']
+                <=>
+                (int) $a['uid'],
         );
 
         return $normalized;
@@ -321,12 +532,20 @@ class MailboxReaderService
         string $folder,
         bool $seen,
     ): array {
-        $mailboxAddress = $this->normalizeMailboxAddress(
-            $mailboxAddress,
-        );
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
 
-        $folder = $this->normalizeFolder($folder);
-        $uid = $this->normalizeMessageUid($uid);
+        $folder =
+            $this->normalizeFolder(
+                $folder,
+            );
+
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
 
         $this->runReaderAction([
             $seen
@@ -353,12 +572,20 @@ class MailboxReaderService
         string $folder,
         bool $starred,
     ): array {
-        $mailboxAddress = $this->normalizeMailboxAddress(
-            $mailboxAddress,
-        );
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
 
-        $folder = $this->normalizeFolder($folder);
-        $uid = $this->normalizeMessageUid($uid);
+        $folder =
+            $this->normalizeFolder(
+                $folder,
+            );
+
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
 
         $this->runReaderAction([
             $starred
@@ -456,12 +683,13 @@ class MailboxReaderService
     private function runReader(
         array $arguments,
     ): string {
-        $result = Process::timeout(10)->run([
-            '/usr/bin/sudo',
-            '-n',
-            self::READER,
-            ...$arguments,
-        ]);
+        $result = Process::timeout(30)
+            ->run([
+                '/usr/bin/sudo',
+                '-n',
+                self::READER,
+                ...$arguments,
+            ]);
 
         if ($result->failed()) {
             throw new RuntimeException(
@@ -479,10 +707,12 @@ class MailboxReaderService
             trim($mailboxAddress),
         );
 
-        if (! preg_match(
-            '/^[a-z0-9._%+\-]+@barmanasin\.com$/',
-            $mailboxAddress,
-        )) {
+        if (
+            ! preg_match(
+                '/^[a-z0-9._%+\-]+@barmanasin\.com$/',
+                $mailboxAddress,
+            )
+        ) {
             throw new RuntimeException(
                 'Invalid Barmanasin mailbox address.',
             );
@@ -496,11 +726,13 @@ class MailboxReaderService
     ): string {
         $folder = trim($folder);
 
-        if (! in_array(
-            $folder,
-            self::ALLOWED_FOLDERS,
-            true,
-        )) {
+        if (
+            ! in_array(
+                $folder,
+                self::ALLOWED_FOLDERS,
+                true,
+            )
+        ) {
             throw new RuntimeException(
                 'Invalid mailbox folder.',
             );
@@ -514,7 +746,12 @@ class MailboxReaderService
     ): string {
         $uid = (string) $uid;
 
-        if (! preg_match('/^[1-9][0-9]*$/', $uid)) {
+        if (
+            ! preg_match(
+                '/^[1-9][0-9]*$/',
+                $uid,
+            )
+        ) {
             throw new RuntimeException(
                 'Invalid message UID.',
             );
@@ -531,19 +768,28 @@ class MailboxReaderService
         array $message,
     ): array {
         $flags = $this->normalizeFlags(
-            (string) ($message['flags'] ?? ''),
+            (string) (
+                $message['flags'] ?? ''
+            ),
         );
 
         $from = $this->parseAddress(
-            (string) ($message['hdr.from'] ?? ''),
+            (string) (
+                $message['hdr.from'] ?? ''
+            ),
         );
 
         return [
             'mailbox' => trim(
-                (string) ($message['mailbox'] ?? 'INBOX'),
+                (string) (
+                    $message['mailbox']
+                    ?? 'INBOX'
+                ),
             ),
 
-            'uid' => (string) ($message['uid'] ?? ''),
+            'uid' => (string) (
+                $message['uid'] ?? ''
+            ),
 
             'flags' => $flags,
 
@@ -562,38 +808,60 @@ class MailboxReaderService
             'from' => $from,
 
             'to' => trim(
-                (string) ($message['hdr.to'] ?? ''),
+                (string) (
+                    $message['hdr.to'] ?? ''
+                ),
             ),
 
-            'subject' => $this->normalizeHeader(
-                (string) ($message['hdr.subject'] ?? ''),
-                '(No subject)',
-            ),
+            'subject' =>
+                $this->normalizeHeader(
+                    (string) (
+                        $message['hdr.subject']
+                        ?? ''
+                    ),
+                    '(No subject)',
+                ),
 
             'date' => trim(
-                (string) ($message['hdr.date'] ?? ''),
+                (string) (
+                    $message['hdr.date']
+                    ?? ''
+                ),
             ),
         ];
     }
 
     /**
      * @param array<string, mixed> $message
+     * @param array{
+     *     text: string,
+     *     html: string
+     * } $body
+     * @param array<int, array<string, mixed>> $attachments
      * @return array<string, mixed>
      */
     private function normalizeDetailedMessage(
         array $message,
-        ImapBodyStructureParser $parser,
+        array $body,
+        array $attachments,
     ): array {
         $flags = $this->normalizeFlags(
-            (string) ($message['flags'] ?? ''),
+            (string) (
+                $message['flags'] ?? ''
+            ),
         );
 
         return [
             'mailbox' => trim(
-                (string) ($message['mailbox'] ?? 'INBOX'),
+                (string) (
+                    $message['mailbox']
+                    ?? 'INBOX'
+                ),
             ),
 
-            'uid' => (string) ($message['uid'] ?? ''),
+            'uid' => (string) (
+                $message['uid'] ?? ''
+            ),
 
             'flags' => $flags,
 
@@ -614,52 +882,66 @@ class MailboxReaderService
             ),
 
             'from' => $this->parseAddress(
-                (string) ($message['hdr.from'] ?? ''),
+                (string) (
+                    $message['hdr.from']
+                    ?? ''
+                ),
             ),
 
             'to' => trim(
-                (string) ($message['hdr.to'] ?? ''),
+                (string) (
+                    $message['hdr.to']
+                    ?? ''
+                ),
             ),
 
             'cc' => trim(
-                (string) ($message['hdr.cc'] ?? ''),
+                (string) (
+                    $message['hdr.cc']
+                    ?? ''
+                ),
             ),
 
             'reply_to' => trim(
-                (string) ($message['hdr.reply-to'] ?? ''),
+                (string) (
+                    $message['hdr.reply-to']
+                    ?? ''
+                ),
             ),
 
-            'subject' => $this->normalizeHeader(
-                (string) ($message['hdr.subject'] ?? ''),
-                '(No subject)',
-            ),
+            'subject' =>
+                $this->normalizeHeader(
+                    (string) (
+                        $message['hdr.subject']
+                        ?? ''
+                    ),
+                    '(No subject)',
+                ),
 
             'date' => trim(
-                (string) ($message['hdr.date'] ?? ''),
+                (string) (
+                    $message['hdr.date']
+                    ?? ''
+                ),
             ),
 
             'message_id' => trim(
-                (string) ($message['hdr.message-id'] ?? ''),
+                (string) (
+                    $message['hdr.message-id']
+                    ?? ''
+                ),
             ),
 
             'body_structure' => trim(
                 (string) (
-                    $message['imap.bodystructure'] ?? ''
+                    $message['imap.bodystructure']
+                    ?? ''
                 ),
             ),
 
-            'body' => [
-                'text' => $this->normalizeBody(
-                    (string) ($message['body.1'] ?? ''),
-                ),
+            'body' => $body,
 
-                'html' => '',
-            ],
-            'attachments' => $parser->attachments(
-                (string) (
-                    $message['imap.bodystructure'] ?? ''
-                ),
-            ),
+            'attachments' => $attachments,
         ];
     }
 
@@ -677,7 +959,10 @@ class MailboxReaderService
 
         return array_values(
             array_filter(
-                preg_split('/\s+/', $flags) ?: [],
+                preg_split(
+                    '/\s+/',
+                    $flags,
+                ) ?: [],
             ),
         );
     }
@@ -760,33 +1045,5 @@ class MailboxReaderService
                 $value,
             ),
         );
-    }
-    private function extractAttachments(
-        string $structure,
-    ): array {
-        if (trim($structure) === '') {
-            return [];
-        }
-
-        $attachments = [];
-
-        if (
-            preg_match(
-                '/"image"\s+"([^"]+)".*?"base64"\s+([0-9]+).*?"filename\*"\s+"utf-8\'\'([^"]+)"/s',
-                $structure,
-                $matches,
-            )
-        ) {
-            $attachments[] = [
-                'part' => '2',
-                'filename' => urldecode(
-                    $matches[3],
-                ),
-                'content_type' => 'image/' . $matches[1],
-                'size' => (int) $matches[2],
-            ];
-        }
-
-        return $attachments;
     }
 }
