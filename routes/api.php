@@ -25,8 +25,10 @@ use App\Http\Controllers\Api\MailSendController;
 use App\Http\Controllers\Api\MailAttachmentController;
 use App\Http\Controllers\Api\MailSentController;
 use App\Http\Controllers\Api\MailAttachmentDownloadController;
-
-
+use App\Http\Controllers\Api\MailDraftsController;
+use App\Http\Controllers\Api\MailDraftStoreController;
+use App\Http\Controllers\Api\MailDraftUpdateController;
+use App\Http\Controllers\Api\MailDraftDeleteController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -99,6 +101,27 @@ Route::middleware('auth:sanctum')->group(function () {
         '/mail/sent',
         MailSentController::class
     );
+
+    Route::get(
+        '/mail/drafts',
+        MailDraftsController::class
+    );
+    Route::post(
+        '/mail/drafts',
+        MailDraftStoreController::class
+    );
+
+    Route::put(
+        '/mail/drafts/{uid}',
+        MailDraftUpdateController::class
+    )->whereNumber('uid');
+
+    Route::delete(
+        '/mail/drafts/{uid}',
+        MailDraftDeleteController::class
+    )->whereNumber('uid');
+
+
 
 
     Route::post(

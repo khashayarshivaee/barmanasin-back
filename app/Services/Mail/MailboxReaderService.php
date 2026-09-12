@@ -48,6 +48,17 @@ class MailboxReaderService
     /**
      * @return array<int, array<string, mixed>>
      */
+    public function drafts(string $mailboxAddress): array
+    {
+        return $this->listMessages(
+            $mailboxAddress,
+            'drafts-list',
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function starred(string $mailboxAddress): array
     {
         return $this->listMessages(
@@ -188,6 +199,142 @@ class MailboxReaderService
     }
 
     /**
+     * @return array{
+     *     part: string,
+     *     filename: string,
+     *     content_type: string,
+     *     size: int,
+     *     disposition: string,
+     *     encoding: string,
+     *     content: string
+     * }
+     */
+    public function messageAttachment(
+        string $mailboxAddress,
+        string|int $uid,
+        string $part,
+        string $folder = 'INBOX',
+    ): array {
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
+
+        $folder =
+            $this->normalizeFolder(
+                $folder,
+            );
+
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
+
+
+        $message = $this->message(
+            $mailboxAddress,
+            $uid,
+            $folder,
+        );
+
+
+        if ($message === null) {
+            throw new RuntimeException(
+                'Message not found.',
+            );
+        }
+
+
+        $attachment = null;
+
+
+        foreach (
+            $message['attachments'] ?? []
+            as $candidate
+        ) {
+            if (
+                (string) (
+                    $candidate['part'] ?? ''
+                ) === $part
+            ) {
+                $attachment = $candidate;
+
+                break;
+            }
+        }
+
+
+        if (! is_array($attachment)) {
+            throw new RuntimeException(
+                'Attachment not found.',
+            );
+        }
+
+
+        $rawContent =
+            $this->messagePart(
+                $mailboxAddress,
+                $uid,
+                $part,
+                $folder,
+            );
+
+
+        if ($rawContent === '') {
+            throw new RuntimeException(
+                'Attachment content is empty.',
+            );
+        }
+
+
+        $content =
+            $this->decodePartContent(
+                $rawContent,
+                (string) (
+                    $attachment['encoding'] ?? ''
+                ),
+            );
+
+
+        return [
+            'part' =>
+                (string) (
+                    $attachment['part'] ?? $part
+                ),
+
+            'filename' =>
+                (string) (
+                    $attachment['filename']
+                    ?? 'attachment'
+                ),
+
+            'content_type' =>
+                (string) (
+                    $attachment['content_type']
+                    ?? 'application/octet-stream'
+                ),
+
+            'size' =>
+                (int) (
+                    $attachment['size'] ?? 0
+                ),
+
+            'disposition' =>
+                (string) (
+                    $attachment['disposition'] ?? ''
+                ),
+
+            'encoding' =>
+                (string) (
+                    $attachment['encoding'] ?? ''
+                ),
+
+            'content' =>
+                $content,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function markSeen(
@@ -315,6 +462,27 @@ class MailboxReaderService
             'message-trash',
             $mailboxAddress,
             $folder,
+            $uid,
+        ]);
+    }
+
+    public function deleteDraft(
+        string $mailboxAddress,
+        string|int $uid,
+    ): void {
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
+
+        $uid =
+            $this->normalizeMessageUid(
+                $uid,
+            );
+
+        $this->runReaderAction([
+            'draft-delete',
+            $mailboxAddress,
             $uid,
         ]);
     }
@@ -898,6 +1066,13 @@ class MailboxReaderService
             'cc' => trim(
                 (string) (
                     $message['hdr.cc']
+                    ?? ''
+                ),
+            ),
+
+            'bcc' => trim(
+                (string) (
+                    $message['hdr.bcc']
                     ?? ''
                 ),
             ),

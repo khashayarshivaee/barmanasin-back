@@ -3,18 +3,14 @@
 namespace App\Services\Mail;
 
 use App\Models\MailAttachment;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\Mime\Email;
 
-class MailSendService
+class MailDraftService
 {
-    private const SENDMAIL = '/usr/sbin/sendmail';
-
-
     public function __construct(
-        private readonly MailSentStorageService $sentStorage,
+        private readonly MailDraftStorageService $draftStorage,
     ) {
     }
 
@@ -23,42 +19,37 @@ class MailSendService
      * @param array<int, string> $to
      * @param array<int, string> $cc
      * @param array<int, string> $bcc
-     * @param \Illuminate\Support\Collection<int, MailAttachment> $attachments
-     *
-     * @return array{
-     *     submitted: bool,
-     *     sent_saved: bool
-     * }
+     * @param iterable<int, MailAttachment> $attachments
+     * @param array<int, array{
+     *     filename?: string,
+     *     content_type?: string,
+     *     content?: string
+     * }> $existingAttachments
      */
-    public function send(
+    public function save(
         string $mailboxAddress,
-        array $to,
+        array $to = [],
         array $cc = [],
         array $bcc = [],
         string $subject = '',
         string $body = '',
-               $attachments = [],
+        iterable $attachments = [],
         array $existingAttachments = [],
-    ): array {
-
-
+    ): void {
         $mailboxAddress =
             $this->normalizeMailboxAddress(
                 $mailboxAddress,
             );
-
 
         $to =
             $this->normalizeRecipients(
                 $to,
             );
 
-
         $cc =
             $this->normalizeRecipients(
                 $cc,
             );
-
 
         $bcc =
             $this->normalizeRecipients(
@@ -66,19 +57,7 @@ class MailSendService
             );
 
 
-
-        if ($to === []) {
-
-            throw new RuntimeException(
-                'At least one recipient is required.',
-            );
-
-        }
-
-
-
         $email = new Email();
-
 
 
         $email->from(
@@ -86,19 +65,25 @@ class MailSendService
         );
 
 
-        $email->to(
-            ...$to,
-        );
+        if ($to !== []) {
+            $email->to(
+                ...$to,
+            );
+        }
 
 
         if ($cc !== []) {
-
             $email->cc(
                 ...$cc,
             );
-
         }
 
+
+        if ($bcc !== []) {
+            $email->bcc(
+                ...$bcc,
+            );
+        }
 
 
         $email->subject(
@@ -112,151 +97,54 @@ class MailSendService
         );
 
 
-
+        /*
+         * Newly uploaded attachments.
+         */
         foreach ($attachments as $attachment) {
-
-            $this->attachFile(
+            $this->attachUploadedFile(
                 $email,
                 $attachment,
             );
-
         }
+
+
+        /*
+         * Attachments already stored inside
+         * the existing Dovecot draft.
+         */
         foreach (
             $existingAttachments
             as $attachment
         ) {
-
             $this->attachExistingFile(
                 $email,
                 $attachment,
             );
-
         }
-
 
 
         $rawMessage =
             $email->toString();
 
 
-
         if (trim($rawMessage) === '') {
-
             throw new RuntimeException(
-                'Unable to generate message MIME.',
+                'Unable to generate draft MIME.',
             );
-
         }
 
 
-
-        $envelopeRecipients =
-            array_values(
-                array_unique([
-                    ...$to,
-                    ...$cc,
-                    ...$bcc,
-                ]),
-            );
-
-
-
-        $command = [
-
-            self::SENDMAIL,
-
-            '-i',
-
-            '-f',
-
+        $this->draftStorage->save(
             $mailboxAddress,
-
-            ...$envelopeRecipients,
-
-        ];
-
-
-
-        $result =
-            Process::timeout(60)
-                ->input($rawMessage)
-                ->run($command);
-
-
-
-        if ($result->failed()) {
-
-
-            $error =
-                trim(
-                    $result->errorOutput(),
-                );
-
-
-            throw new RuntimeException(
-
-                $error !== ''
-
-                    ? 'Postfix rejected the message: ' . $error
-
-                    : 'Postfix rejected the message.',
-
-            );
-
-        }
-
-
-
-
-        $sentSaved = true;
-
-
-
-        try {
-
-
-            $this->sentStorage->save(
-                $mailboxAddress,
-                $rawMessage,
-            );
-
-
-        } catch (RuntimeException $exception) {
-
-
-            $sentSaved = false;
-
-
-            report(
-                $exception,
-            );
-
-
-        }
-
-
-
-
-        return [
-
-            'submitted' => true,
-
-            'sent_saved' => $sentSaved,
-
-        ];
-
+            $rawMessage,
+        );
     }
 
 
-
-
-
-    private function attachFile(
+    private function attachUploadedFile(
         Email $email,
         MailAttachment $attachment,
     ): void {
-
-
         $path =
             Storage::disk(
                 $attachment->disk,
@@ -265,17 +153,11 @@ class MailSendService
             );
 
 
-
-        if (
-            ! is_file($path)
-        ) {
-
+        if (! is_file($path)) {
             throw new RuntimeException(
-                'Attachment file is not available.',
+                'Draft attachment file is not available.',
             );
-
         }
-
 
 
         $filename =
@@ -284,11 +166,16 @@ class MailSendService
             );
 
 
-
         $mimeType =
-            $attachment->mime_type
-                ?: 'application/octet-stream';
+            trim(
+                (string) $attachment->mime_type,
+            );
 
+
+        if ($mimeType === '') {
+            $mimeType =
+                'application/octet-stream';
+        }
 
 
         $email->attachFromPath(
@@ -296,7 +183,6 @@ class MailSendService
             $filename,
             $mimeType,
         );
-
     }
 
 
@@ -311,7 +197,6 @@ class MailSendService
         Email $email,
         array $attachment,
     ): void {
-
         $content =
             (string) (
                 $attachment['content'] ?? ''
@@ -319,11 +204,9 @@ class MailSendService
 
 
         if ($content === '') {
-
             throw new RuntimeException(
                 'Existing draft attachment content is empty.',
             );
-
         }
 
 
@@ -346,10 +229,8 @@ class MailSendService
 
 
         if ($mimeType === '') {
-
             $mimeType =
                 'application/octet-stream';
-
         }
 
 
@@ -358,32 +239,20 @@ class MailSendService
             $filename,
             $mimeType,
         );
-
     }
-
-
-
-
-
 
 
     /**
      * @param array<int, string> $recipients
-     *
      * @return array<int, string>
      */
     private function normalizeRecipients(
         array $recipients,
     ): array {
-
-
         $normalized = [];
 
 
-
         foreach ($recipients as $recipient) {
-
-
             $recipient =
                 mb_strtolower(
                     trim(
@@ -392,68 +261,42 @@ class MailSendService
                 );
 
 
-
             if ($recipient === '') {
-
                 continue;
-
             }
 
 
-
-
             if (
-
                 str_starts_with(
                     $recipient,
                     '-',
                 )
-
                 ||
-
                 filter_var(
                     $recipient,
                     FILTER_VALIDATE_EMAIL,
                 ) === false
-
             ) {
-
-
                 throw new RuntimeException(
-                    'Invalid recipient email address.',
+                    'Invalid draft recipient email address.',
                 );
-
-
             }
 
 
-
-            $normalized[
-            $recipient
-            ] = $recipient;
-
-
+            $normalized[$recipient] =
+                $recipient;
         }
-
 
 
         return array_values(
             $normalized,
         );
-
-
     }
-
-
-
-
 
 
     private function normalizeMailboxAddress(
         string $mailboxAddress,
     ): string {
-
-
         $mailboxAddress =
             mb_strtolower(
                 trim(
@@ -462,42 +305,31 @@ class MailSendService
             );
 
 
-
-        if (! preg_match(
-            '/^[a-z0-9._%+\-]+@barmanasin\.com$/',
-            $mailboxAddress,
-        )) {
-
-
+        if (
+            ! preg_match(
+                '/^[a-z0-9._%+\-]+@barmanasin\.com$/',
+                $mailboxAddress,
+            )
+        ) {
             throw new RuntimeException(
                 'Invalid Barmanasin mailbox address.',
             );
-
-
         }
 
 
-
         return $mailboxAddress;
-
     }
-
-
-
-
-
 
 
     private function normalizeAttachmentName(
         string $filename,
     ): string {
-
-
         $filename =
             basename(
-                trim($filename),
+                trim(
+                    $filename,
+                ),
             );
-
 
 
         $filename =
@@ -508,24 +340,14 @@ class MailSendService
             ) ?? '';
 
 
-
         $filename =
             trim(
                 $filename,
             );
 
 
-
-        if ($filename === '') {
-
-            return 'attachment';
-
-        }
-
-
-
-        return $filename;
-
+        return $filename !== ''
+            ? $filename
+            : 'attachment';
     }
-
 }
