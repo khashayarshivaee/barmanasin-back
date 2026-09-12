@@ -1203,11 +1203,35 @@ class MailboxReaderService
         string $value,
         string $fallback,
     ): string {
-        $value = trim($value);
+        $value = trim(
+            $value,
+        );
 
-        return $value !== ''
-            ? $value
-            : $fallback;
+        if ($value === '') {
+            return $fallback;
+        }
+
+
+        $decoded =
+            iconv_mime_decode(
+                $value,
+                ICONV_MIME_DECODE_CONTINUE_ON_ERROR,
+                'UTF-8',
+            );
+
+
+        if (
+            $decoded === false
+            ||
+            trim($decoded) === ''
+        ) {
+            return $value;
+        }
+
+
+        return trim(
+            $decoded,
+        );
     }
 
     private function normalizeBody(
