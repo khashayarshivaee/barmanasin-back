@@ -632,6 +632,8 @@ class MailboxReaderService
         string $mailboxAddress,
         string $query,
         string $type = 'TEXT',
+        int $page = 1,
+        int $perPage = 100,
     ): array {
         $mailboxAddress =
             $this->normalizeMailboxAddress(
@@ -672,6 +674,8 @@ class MailboxReaderService
             $mailboxAddress,
             $type,
             $query,
+            (string) $page,
+            (string) $perPage,
         ]);
 
         $normalized = array_map(

@@ -35,6 +35,19 @@ class MailSearchController extends Controller
             (string) $request->query('type', 'TEXT'),
         );
 
+        $page = max(
+            1,
+            (int) $request->query('page', 1),
+        );
+
+        $perPage = min(
+            100,
+            max(
+                1,
+                (int) $request->query('per_page', 100),
+            ),
+        );
+
         if ($query === '') {
             return response()->json([
                 'message' => 'Search query is required.',
@@ -46,6 +59,20 @@ class MailSearchController extends Controller
                 $user->mailbox_address,
                 $query,
                 $type,
+                $page,
+                $perPage,
+            );
+            $page = max(
+                1,
+                (int) $request->query('page', 1),
+            );
+
+            $perPage = min(
+                100,
+                max(
+                    1,
+                    (int) $request->query('per_page', 100),
+                ),
             );
         } catch (RuntimeException $exception) {
             report($exception);
@@ -60,6 +87,10 @@ class MailSearchController extends Controller
 
             'meta' => [
                 'total' => count($messages),
+
+                'page' => $page,
+
+                'per_page' => $perPage,
 
                 'unread' => count(
                     array_filter(
