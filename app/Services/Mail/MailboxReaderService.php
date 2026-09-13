@@ -628,6 +628,77 @@ class MailboxReaderService
     /**
      * @return array<int, array<string, mixed>>
      */
+    public function search(
+        string $mailboxAddress,
+        string $query,
+        string $type = 'TEXT',
+    ): array {
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
+
+        $query = trim($query);
+
+        if ($query === '') {
+            throw new RuntimeException(
+                'Search query cannot be empty.',
+            );
+        }
+
+        $type = strtoupper(
+            trim($type),
+        );
+
+        if (
+            ! in_array(
+                $type,
+                [
+                    'TEXT',
+                    'SUBJECT',
+                    'FROM',
+                    'TO',
+                ],
+                true,
+            )
+        ) {
+            throw new RuntimeException(
+                'Invalid search type.',
+            );
+        }
+
+        $messages = $this->runReaderJson([
+            'search',
+            $mailboxAddress,
+            $type,
+            $query,
+        ]);
+
+        $normalized = array_map(
+            fn (array $message): array =>
+            $this->normalizeSummaryMessage(
+                $message,
+            ),
+            $messages,
+        );
+
+        usort(
+            $normalized,
+            static fn (
+                array $a,
+                array $b,
+            ): int =>
+                (int) $b['uid']
+                <=>
+                (int) $a['uid'],
+        );
+
+        return $normalized;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     private function listMessages(
         string $mailboxAddress,
         string $action,

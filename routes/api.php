@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\MailDraftStoreController;
 use App\Http\Controllers\Api\MailDraftUpdateController;
 use App\Http\Controllers\Api\MailDraftDeleteController;
 use App\Http\Controllers\Api\MailAvatarController;
+use App\Http\Controllers\Api\MailSearchController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -89,6 +90,7 @@ Route::prefix('mail/auth')->group(function () {
         Route::delete('/avatar', [MailAvatarController::class, 'destroy'])
             ->middleware('throttle:10,1');
 
+
     });
 
 });
@@ -100,6 +102,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get(
         '/mail/inbox',
         MailInboxController::class
+    );
+
+    Route::get(
+        '/mail/search',
+        MailSearchController::class
     );
 
 
