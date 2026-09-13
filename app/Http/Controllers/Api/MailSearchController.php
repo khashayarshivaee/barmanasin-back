@@ -68,6 +68,8 @@ class MailSearchController extends Controller
                         (bool) ($message['unread'] ?? false),
                     ),
                 ),
+
+                'search' => $query,
             ],
         ]);
     }
