@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'name',
@@ -160,6 +161,17 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return null;
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (blank($this->avatar_path)) {
+            return null;
+        }
+
+        return url(
+            Storage::disk('public')->url($this->avatar_path)
+        );
     }
 
 

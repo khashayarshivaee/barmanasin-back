@@ -53,6 +53,7 @@ class MailAuthController extends Controller
                 'email' => $user->email,
                 'mailbox_address' => $user->mailbox_address,
                 'mailbox_quota_mb' => $user->mailbox_quota_mb,
+                'avatar_url' => $user->avatarUrl(),
             ],
         ]);
     }
@@ -68,6 +69,7 @@ class MailAuthController extends Controller
                 'email' => $user->email,
                 'mailbox_address' => $user->mailbox_address,
                 'mailbox_quota_mb' => $user->mailbox_quota_mb,
+                'avatar_url' => $user->avatarUrl(),
             ],
         ]);
     }

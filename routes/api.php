@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\MailDraftsController;
 use App\Http\Controllers\Api\MailDraftStoreController;
 use App\Http\Controllers\Api\MailDraftUpdateController;
 use App\Http\Controllers\Api\MailDraftDeleteController;
+use App\Http\Controllers\Api\MailAvatarController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -76,12 +77,17 @@ Route::prefix('mail/auth')->group(function () {
     Route::post('/login', [MailAuthController::class, 'login'])
         ->middleware('throttle:5,1');
 
-
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/me', [MailAuthController::class, 'me']);
 
         Route::post('/logout', [MailAuthController::class, 'logout']);
+
+        Route::post('/avatar', [MailAvatarController::class, 'store'])
+            ->middleware('throttle:10,1');
+
+        Route::delete('/avatar', [MailAvatarController::class, 'destroy'])
+            ->middleware('throttle:10,1');
 
     });
 
