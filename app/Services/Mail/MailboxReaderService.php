@@ -493,6 +493,31 @@ class MailboxReaderService
         ];
     }
 
+    public function starredCount(
+        string $mailboxAddress,
+    ): array {
+
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
+
+
+        $result = $this->runReaderJsonObject([
+            'starred-count',
+            $mailboxAddress,
+        ]);
+
+
+        return [
+            'total' =>
+                (int) ($result['total'] ?? 0),
+
+            'unread' =>
+                (int) ($result['unread'] ?? 0),
+        ];
+    }
+
     public function deleteDraft(
         string $mailboxAddress,
         string|int $uid,

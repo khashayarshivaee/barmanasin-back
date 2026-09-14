@@ -65,9 +65,8 @@ class MailFolderStatsController extends Controller
                 ),
 
 
-                'starred' => $mailboxReader->folderCount(
+                'starred' => $mailboxReader->starredCount(
                     $user->mailbox_address,
-                    'INBOX',
                 ),
 
             ];
