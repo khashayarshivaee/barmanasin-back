@@ -477,7 +477,7 @@ class MailboxReaderService
             );
 
 
-        $result = $this->runReaderJson([
+        $result = $this->runReaderJsonObject([
             'folder-count',
             $mailboxAddress,
             $folder,
@@ -934,6 +934,51 @@ class MailboxReaderService
                 is_array($item),
             ),
         );
+    }
+
+    /**
+     * @param array<int, string> $arguments
+     * @return array<string, mixed>
+     */
+    private function runReaderJsonObject(
+        array $arguments,
+    ): array {
+
+        $result = $this->runReader(
+            $arguments,
+        );
+
+        try {
+
+            $payload = json_decode(
+                $result,
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+
+        } catch (JsonException $exception) {
+
+            throw new RuntimeException(
+                'Mailbox reader returned invalid JSON.',
+                previous: $exception,
+            );
+
+        }
+
+
+        if (
+            ! is_array($payload)
+        ) {
+
+            throw new RuntimeException(
+                'Mailbox reader returned an invalid response.',
+            );
+
+        }
+
+
+        return $payload;
     }
 
     /**
