@@ -1,40 +1,29 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 
-return Application::configure(basePath: dirname(__DIR__))
 
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
+Broadcast::channel(
+    'App.Models.User.{id}',
+    function ($user, $id) {
 
-    ->withBroadcasting(
-        __DIR__.'/../routes/channels.php',
-        [
-            'middleware' => [
-                'web',
-            ],
-        ],
-    )
+        return (int) $user->id === (int) $id;
 
-    ->withMiddleware(function (Middleware $middleware): void {
+    }
+);
 
-        $middleware->statefulApi();
 
-    })
+Broadcast::channel(
+    'mailbox.{userId}',
+    function ($user, $userId) {
 
-    ->withExceptions(function (Exceptions $exceptions): void {
+        \Log::info('Broadcast debug', [
+            'user_id' => $user?->id,
+            'target_user_id' => $userId,
+        ]);
 
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) =>
-                $request->is('api/*')
-                || $request->expectsJson(),
-        );
 
-    })->create();
+        return true;
+
+    }
+);
