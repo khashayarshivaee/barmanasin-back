@@ -133,9 +133,16 @@ class MailAuthController extends Controller
             ?->delete();
 
 
+        if (auth()->guard('web')->check()) {
+            auth()->guard('web')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+
         return response()->json([
-            'message' =>
-                'Logged out successfully.',
+            'message' => 'Logged out successfully.',
         ]);
     }
 }
