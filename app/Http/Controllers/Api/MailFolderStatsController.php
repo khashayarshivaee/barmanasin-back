@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\Mail\MailboxReaderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
+use App\Services\Mail\MailFolderStatsService;
 
 class MailFolderStatsController extends Controller
 {
     public function __invoke(
         Request $request,
-        MailboxReaderService $mailboxReader,
+        MailFolderStatsService $folderStats,
     ): JsonResponse {
 
         $user = $request->user();
@@ -33,44 +33,9 @@ class MailFolderStatsController extends Controller
 
         try {
 
-            $folders = [
-
-                'inbox' => $mailboxReader->folderCount(
-                    $user->mailbox_address,
-                    'INBOX',
-                ),
-
-
-                'sent' => $mailboxReader->folderCount(
-                    $user->mailbox_address,
-                    'Sent',
-                ),
-
-
-                'drafts' => $mailboxReader->folderCount(
-                    $user->mailbox_address,
-                    'Drafts',
-                ),
-
-
-                'archive' => $mailboxReader->folderCount(
-                    $user->mailbox_address,
-                    'Archive',
-                ),
-
-
-                'trash' => $mailboxReader->folderCount(
-                    $user->mailbox_address,
-                    'Trash',
-                ),
-
-
-                'starred' => $mailboxReader->starredCount(
-                    $user->mailbox_address,
-                ),
-
-            ];
-
+            $folders = $folderStats->get(
+                $user->mailbox_address,
+            );
 
         } catch (RuntimeException $exception) {
 
