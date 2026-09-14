@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -61,10 +60,9 @@ class MailAuthController extends Controller
         }
 
 
-        Auth::guard('web')->login($user);
-
-
-        $request->session()->regenerate();
+        $token = $user
+            ->createToken('mail-front')
+            ->plainTextToken;
 
 
         return response()->json([
@@ -90,6 +88,9 @@ class MailAuthController extends Controller
                 'avatar_url' =>
                     $user->avatarUrl(),
             ],
+
+            'token' =>
+                $token,
         ]);
     }
 
@@ -127,13 +128,14 @@ class MailAuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('web')->logout();
-
-
-        $request->session()->invalidate();
-
-
-        $request->session()->regenerateToken();
+        $request
+            ->user()
+            ?->tokens()
+            ->where(
+                'name',
+                'mail-front',
+            )
+            ->delete();
 
 
         return response()->json([
