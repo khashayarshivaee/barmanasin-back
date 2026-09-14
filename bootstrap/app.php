@@ -18,7 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../routes/channels.php',
         [
             'middleware' => [
-                'web',
+                'api',
+                'auth:sanctum',
             ],
         ],
     )
