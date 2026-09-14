@@ -466,6 +466,33 @@ class MailboxReaderService
         ]);
     }
 
+    public function folderCount(
+        string $mailboxAddress,
+        string $folder,
+    ): array {
+
+        $mailboxAddress =
+            $this->normalizeMailboxAddress(
+                $mailboxAddress,
+            );
+
+
+        $result = $this->runReaderJson([
+            'folder-count',
+            $mailboxAddress,
+            $folder,
+        ]);
+
+
+        return [
+            'total' =>
+                (int) ($result['total'] ?? 0),
+
+            'unread' =>
+                (int) ($result['unread'] ?? 0),
+        ];
+    }
+
     public function deleteDraft(
         string $mailboxAddress,
         string|int $uid,
