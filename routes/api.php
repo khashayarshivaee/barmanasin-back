@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\MailDraftUpdateController;
 use App\Http\Controllers\Api\MailDraftDeleteController;
 use App\Http\Controllers\Api\MailAvatarController;
 use App\Http\Controllers\Api\MailSearchController;
+use App\Http\Controllers\Api\MailFolderStatsController;
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -102,6 +103,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get(
         '/mail/inbox',
         MailInboxController::class
+    );
+
+    Route::get(
+        '/mail/folder-stats',
+        MailFolderStatsController::class
     );
 
     Route::get(
