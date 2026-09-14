@@ -128,9 +128,14 @@ class MailAuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()
-            ?->currentAccessToken()
-            ?->delete();
+        $token = $request->user()?->currentAccessToken();
+
+        if (
+            $token
+            && method_exists($token, 'delete')
+        ) {
+            $token->delete();
+        }
 
 
         if (auth()->guard('web')->check()) {
