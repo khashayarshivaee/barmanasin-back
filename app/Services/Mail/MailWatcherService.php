@@ -4,8 +4,8 @@ namespace App\Services\Mail;
 
 use App\Models\Mailbox;
 use App\Models\MailboxWatchState;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\File;
 
 
 class MailWatcherService
@@ -32,8 +32,10 @@ class MailWatcherService
     }
 
 
-    private function scanMailbox(Mailbox $mailbox): void
-    {
+    private function scanMailbox(
+        Mailbox $mailbox
+    ): void {
+
         $path = $this->mailboxNewPath($mailbox);
 
 
@@ -42,6 +44,18 @@ class MailWatcherService
         ) {
             return;
         }
+
+
+        $hasPreviousState =
+            MailboxWatchState::query()
+                ->where(
+                    'mailbox_id',
+                    $mailbox->id
+                )
+                ->exists();
+
+
+        $newMessageDetected = false;
 
 
         foreach (
@@ -78,6 +92,24 @@ class MailWatcherService
                 'detected_at' => Carbon::now(),
             ]);
 
+
+            /*
+             * First scan:
+             *
+             * Only build baseline.
+             * Do not notify users about old mails.
+             */
+            if ($hasPreviousState) {
+
+                $newMessageDetected = true;
+
+            }
+        }
+
+
+        if (
+            $newMessageDetected
+        ) {
 
             $this->folderBroadcast
                 ->broadcastFor(
