@@ -22,14 +22,16 @@ return [
 
     'allowed_origins' => [
 
-        'http://localhost:57630',
-
         'https://mail.barmanasin.com',
 
     ],
 
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+
+        '#^http://localhost:\d+$#',
+
+    ],
 
 
     'allowed_headers' => [
