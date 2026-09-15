@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\HomeContactSectionController;
 use App\Http\Controllers\Api\ContactInquiryController;
 use App\Http\Controllers\Api\SiteFooterController;
 use App\Http\Controllers\Api\HomeImageShowcaseController;
+
 use App\Http\Controllers\Api\MailAuthController;
 use App\Http\Controllers\Api\MailInboxController;
 use App\Http\Controllers\Api\MailMessageController;
@@ -32,6 +33,8 @@ use App\Http\Controllers\Api\MailDraftDeleteController;
 use App\Http\Controllers\Api\MailAvatarController;
 use App\Http\Controllers\Api\MailSearchController;
 use App\Http\Controllers\Api\MailFolderStatsController;
+
+
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
 
@@ -50,10 +53,12 @@ Route::get(
     [HomeEngineeringApproachController::class, 'index']
 );
 
+
 Route::get(
     '/home/contact',
     [HomeContactSectionController::class, 'index']
 );
+
 
 Route::post(
     '/contact/inquiries',
@@ -74,10 +79,12 @@ Route::get(
 
 
 
+
 Route::prefix('mail/auth')->group(function () {
 
     Route::post('/login', [MailAuthController::class, 'login'])
         ->middleware('throttle:5,1');
+
 
     Route::middleware('auth:sanctum')->group(function () {
 
@@ -85,30 +92,31 @@ Route::prefix('mail/auth')->group(function () {
 
         Route::post('/logout', [MailAuthController::class, 'logout']);
 
+
         Route::post('/avatar', [MailAvatarController::class, 'store'])
             ->middleware('throttle:10,1');
+
 
         Route::delete('/avatar', [MailAvatarController::class, 'destroy'])
             ->middleware('throttle:10,1');
 
-
     });
 
 });
-
-
-
 Route::middleware('auth:sanctum')->group(function () {
+
 
     Route::get(
         '/mail/inbox',
         MailInboxController::class
     );
 
+
     Route::get(
         '/mail/folder-stats',
         MailFolderStatsController::class
     );
+
 
     Route::get(
         '/mail/search',
@@ -121,25 +129,29 @@ Route::middleware('auth:sanctum')->group(function () {
         MailSentController::class
     );
 
+
     Route::get(
         '/mail/drafts',
         MailDraftsController::class
     );
+
+
     Route::post(
         '/mail/drafts',
         MailDraftStoreController::class
     );
+
 
     Route::put(
         '/mail/drafts/{uid}',
         MailDraftUpdateController::class
     )->whereNumber('uid');
 
+
     Route::delete(
         '/mail/drafts/{uid}',
         MailDraftDeleteController::class
     )->whereNumber('uid');
-
 
 
 
@@ -149,67 +161,74 @@ Route::middleware('auth:sanctum')->group(function () {
     );
 
 
+
+    Route::get(
+        '/mail/messages/{uid}',
+        MailMessageController::class
+    )->whereNumber('uid');
+
+
+
     Route::get(
         '/mail/messages/{uid}/attachments/{part}',
         MailAttachmentDownloadController::class,
     )->whereNumber('uid');
 
+
+
+    Route::patch(
+        '/mail/messages/{uid}/seen',
+        MailMessageSeenController::class,
+    )->whereNumber('uid');
+
+
+
+    Route::patch(
+        '/mail/messages/{uid}/starred',
+        MailMessageStarredController::class,
+    )->whereNumber('uid');
+
+
+
+    Route::patch(
+        '/mail/messages/{uid}/archive',
+        MailMessageArchiveController::class,
+    )->whereNumber('uid');
+
+
+
+    Route::patch(
+        '/mail/messages/{uid}/trash',
+        MailMessageTrashController::class,
+    )->whereNumber('uid');
+
+
+
+    Route::get(
+        '/mail/starred',
+        MailStarredController::class
+    );
+
+
+
+    Route::get(
+        '/mail/archive',
+        MailArchiveController::class
+    );
+
+
+
+    Route::get(
+        '/mail/trash',
+        MailTrashController::class
+    );
+
+
+
+    Route::post(
+        '/mail/send',
+        MailSendController::class
+    )->middleware('throttle:10,1');
+
+
 });
-
-
-
-Route::get(
-    '/mail/messages/{uid}',
-    MailMessageController::class
-)->whereNumber('uid');
-
-
-Route::patch(
-    '/mail/messages/{uid}/seen',
-    MailMessageSeenController::class,
-)->whereNumber('uid');
-
-
-Route::patch(
-    '/mail/messages/{uid}/starred',
-    MailMessageStarredController::class,
-)->whereNumber('uid');
-
-
-Route::get(
-    '/mail/starred',
-    MailStarredController::class
-);
-
-
-
-Route::get(
-    '/mail/archive',
-    MailArchiveController::class
-);
-
-
-Route::patch(
-    '/mail/messages/{uid}/archive',
-    MailMessageArchiveController::class,
-)->whereNumber('uid');
-
-
-
-Route::get(
-    '/mail/trash',
-    MailTrashController::class,
-);
-
-
-Route::patch(
-    '/mail/messages/{uid}/trash',
-    MailMessageTrashController::class,
-)->whereNumber('uid');
-
-
-
-Route::post(
-    '/mail/send',
-    MailSendController::class,
-)->middleware('throttle:10,1');
