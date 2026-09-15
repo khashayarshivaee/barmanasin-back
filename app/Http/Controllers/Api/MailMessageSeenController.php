@@ -7,8 +7,7 @@ use App\Services\Mail\MailboxReaderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
-use App\Events\MailFolderUpdated;
-use App\Services\Mail\MailFolderStatsService;
+use App\Services\Mail\MailFolderBroadcastService;
 
 
 
@@ -18,7 +17,7 @@ class MailMessageSeenController extends Controller
         Request $request,
         string $uid,
         MailboxReaderService $mailboxReader,
-        MailFolderStatsService $folderStats,
+        MailFolderBroadcastService $folderBroadcast,
     ): JsonResponse {
         $user = $request->user();
 
@@ -67,14 +66,7 @@ class MailMessageSeenController extends Controller
                     $folder,
                 );
 
-            broadcast(
-                new MailFolderUpdated(
-                    $user->id,
-                    $folderStats->get(
-                        $user->mailbox_address,
-                    ),
-                ),
-            );
+            $folderBroadcast->broadcastFor($user);
         } catch (RuntimeException $exception) {
             report($exception);
 
