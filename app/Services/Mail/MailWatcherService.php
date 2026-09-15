@@ -2,6 +2,7 @@
 
 namespace App\Services\Mail;
 
+use App\Events\MailMessageReceived;
 use App\Models\Mailbox;
 use App\Models\MailboxWatchState;
 use Illuminate\Support\Carbon;
@@ -10,9 +11,8 @@ use Illuminate\Support\Facades\File;
 
 class MailWatcherService
 {
-    public function __construct(
-        private readonly MailFolderBroadcastService $folderBroadcast,
-    ) {
+    public function __construct()
+    {
     }
 
 
@@ -96,8 +96,8 @@ class MailWatcherService
             /*
              * First scan:
              *
-             * Only build baseline.
-             * Do not notify users about old mails.
+             * Only create baseline.
+             * Do not notify user about old messages.
              */
             if ($hasPreviousState) {
 
@@ -111,10 +111,12 @@ class MailWatcherService
             $newMessageDetected
         ) {
 
-            $this->folderBroadcast
-                ->broadcastFor(
-                    $mailbox->user
-                );
+            broadcast(
+                new MailMessageReceived(
+                    $mailbox->user_id,
+                ),
+            );
+
         }
     }
 
