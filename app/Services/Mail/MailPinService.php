@@ -5,7 +5,7 @@ namespace App\Services\Mail;
 use App\Models\MailPinnedMessage;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
-
+use App\Services\Mail\MailboxReaderService;
 
 class MailPinService
 {
@@ -13,25 +13,117 @@ class MailPinService
 
     private const MAX_PINS = 5;
 
+    public function __construct(
+        private readonly MailboxReaderService $reader,
+    ) {
+    }
+
 
 
 
     public function list(
         User $user
-    ) {
+    ): array {
 
-        return MailPinnedMessage::query()
+        $pins =
+            MailPinnedMessage::query()
 
-            ->where(
-                'user_id',
-                $user->id
-            )
+                ->where(
+                    'user_id',
+                    $user->id
+                )
 
-            ->orderBy(
-                'position'
-            )
+                ->orderBy(
+                    'position'
+                )
 
-            ->get();
+                ->get();
+
+
+
+        $messages = [];
+
+
+        foreach ($pins as $pin) {
+
+            $message =
+                $this->reader->message(
+                    $user->mailbox_address,
+                    $pin->message_uid,
+                    $pin->mailbox,
+                );
+
+
+            if (! $message) {
+                continue;
+            }
+
+
+
+            $messages[] = [
+
+                'id' =>
+                    $pin->mailbox
+                    . ':'
+                    . $pin->message_uid,
+
+
+                'mailbox' =>
+                    $pin->mailbox,
+
+
+                'uid' =>
+                    (string) $pin->message_uid,
+
+
+                'senderName' =>
+                    $message['from']['name']
+                    ??
+                        $message['from']['address']
+                        ??
+                        '',
+
+
+                'senderAddress' =>
+                    $message['from']['address']
+                    ??
+                    '',
+
+
+                'subject' =>
+                    $message['subject']
+                    ??
+                    '(No subject)',
+
+
+                'preview' =>
+                    $message['preview']
+                    ??
+                    '',
+
+
+                'receivedAt' =>
+                    $message['date']
+                    ??
+                    null,
+
+
+                'unread' =>
+                    ! ($message['seen'] ?? false),
+
+
+                'starred' =>
+                    (bool) (
+                        $message['starred']
+                        ?? false
+                    ),
+
+            ];
+
+        }
+
+
+        return $messages;
 
     }
 
