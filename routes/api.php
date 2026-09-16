@@ -34,6 +34,9 @@ use App\Http\Controllers\Api\MailAvatarController;
 use App\Http\Controllers\Api\MailSearchController;
 use App\Http\Controllers\Api\MailFolderStatsController;
 
+use App\Http\Controllers\Api\MailPinController;
+
+
 
 Route::get('/header/menu', [HeaderMenuController::class, 'index'])
     ->name('header.menu');
@@ -229,6 +232,26 @@ Route::middleware('auth:sanctum')->group(function () {
         '/mail/send',
         MailSendController::class
     )->middleware('throttle:10,1');
+
+
+
+
+    Route::get(
+        '/mail/pinned',
+        [MailPinController::class, 'index']
+    );
+
+
+    Route::post(
+        '/mail/messages/{uid}/pin',
+        [MailPinController::class, 'store']
+    );
+
+
+    Route::delete(
+        '/mail/messages/{uid}/pin',
+        [MailPinController::class, 'destroy']
+    );
 
 
 });
