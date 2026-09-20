@@ -93,6 +93,11 @@ Route::prefix('mail/auth')->group(function () {
 
         Route::get('/me', [MailAuthController::class, 'me']);
 
+        Route::post(
+            '/welcome-seen',
+            [MailAuthController::class, 'markWelcomeSeen']
+        );
+
         Route::post('/logout', [MailAuthController::class, 'logout']);
 
 

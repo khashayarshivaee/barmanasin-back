@@ -200,6 +200,8 @@ class User extends Authenticatable implements FilamentUser
             'activated_at' => 'datetime',
 
             'suspended_at' => 'datetime',
+
+            'mail_welcome_seen_at' => 'datetime',
         ];
     }
 }

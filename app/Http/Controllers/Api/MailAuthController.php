@@ -87,6 +87,9 @@ class MailAuthController extends Controller
 
                 'avatar_url' =>
                     $user->avatarUrl(),
+
+                'show_welcome' =>
+                    $user->mail_welcome_seen_at === null,
             ],
 
             'token' =>
@@ -120,7 +123,33 @@ class MailAuthController extends Controller
 
                 'avatar_url' =>
                     $user->avatarUrl(),
+
+                'show_welcome' =>
+                    $user->mail_welcome_seen_at === null,
             ],
+        ]);
+    }
+
+    public function markWelcomeSeen(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+
+        if ($user->mail_welcome_seen_at === null) {
+
+            $user->mail_welcome_seen_at = now();
+
+            $user->save();
+
+        }
+
+
+        return response()->json([
+            'message' =>
+                'Mail welcome marked as seen.',
+
+            'show_welcome' =>
+                false,
         ]);
     }
 
