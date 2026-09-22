@@ -11,7 +11,6 @@ use App\Http\Controllers\Api\HomeContactSectionController;
 use App\Http\Controllers\Api\ContactInquiryController;
 use App\Http\Controllers\Api\SiteFooterController;
 use App\Http\Controllers\Api\HomeImageShowcaseController;
-
 use App\Http\Controllers\Api\MailAuthController;
 use App\Http\Controllers\Api\MailInboxController;
 use App\Http\Controllers\Api\MailMessageController;
@@ -33,9 +32,9 @@ use App\Http\Controllers\Api\MailDraftDeleteController;
 use App\Http\Controllers\Api\MailAvatarController;
 use App\Http\Controllers\Api\MailSearchController;
 use App\Http\Controllers\Api\MailFolderStatsController;
-
 use App\Http\Controllers\Api\MailPinController;
 use App\Http\Controllers\Api\MailTeamProfileController;
+use App\Http\Controllers\Api\PublicTeamController;
 
 
 
@@ -79,6 +78,11 @@ Route::get(
 Route::get(
     '/home/image-showcase',
     [HomeImageShowcaseController::class, 'index']
+);
+
+Route::get(
+    '/team',
+    PublicTeamController::class
 );
 
 
