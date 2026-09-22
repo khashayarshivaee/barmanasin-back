@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\MailSearchController;
 use App\Http\Controllers\Api\MailFolderStatsController;
 
 use App\Http\Controllers\Api\MailPinController;
+use App\Http\Controllers\Api\MailTeamProfileController;
 
 
 
@@ -112,6 +113,26 @@ Route::prefix('mail/auth')->group(function () {
 
 });
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get(
+        '/mail/team-profile',
+        [MailTeamProfileController::class, 'show'],
+    );
+
+    Route::put(
+        '/mail/team-profile',
+        [MailTeamProfileController::class, 'update'],
+    );
+
+    Route::post(
+        '/mail/team-profile/photo',
+        [MailTeamProfileController::class, 'storePhoto'],
+    )->middleware('throttle:10,1');
+
+    Route::delete(
+        '/mail/team-profile/photo',
+        [MailTeamProfileController::class, 'destroyPhoto'],
+    )->middleware('throttle:10,1');
 
 
     Route::get(

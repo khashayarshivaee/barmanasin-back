@@ -106,6 +106,19 @@ class User extends Authenticatable implements FilamentUser
         return $this->activated_at !== null;
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Team Profile
+|--------------------------------------------------------------------------
+*/
+
+    public function teamProfile(): HasOne
+    {
+        return $this->hasOne(
+            TeamProfile::class,
+        );
+    }
+
 
     /*
     |--------------------------------------------------------------------------
