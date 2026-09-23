@@ -25,6 +25,9 @@ class PublicTeamController extends Controller
                     'id' =>
                         $profile->id,
 
+                    'slug' =>
+                        $profile->slug,
+
                     'name' => [
                         'en' =>
                             $profile->name_en,

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Str;
 #[Fillable([
     'user_id',
 
@@ -149,5 +149,52 @@ class TeamProfile extends Model
 
             'approved_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(
+            function (TeamProfile $profile): void {
+
+                if (filled($profile->slug)) {
+                    return;
+                }
+
+                $base = Str::slug(
+                    $profile->name_en
+                        ?: $profile->user()
+                        ->value('name')
+                        ?: 'team-member-' . $profile->user_id
+                );
+
+                if ($base === '') {
+                    $base =
+                        'team-member-' . $profile->user_id;
+                }
+
+                $slug = $base;
+                $suffix = 2;
+
+                while (
+                static::query()
+                    ->where('slug', $slug)
+                    ->when(
+                        $profile->exists,
+                        fn ($query) =>
+                        $query->whereKeyNot(
+                            $profile->getKey()
+                        )
+                    )
+                    ->exists()
+                ) {
+                    $slug =
+                        $base . '-' . $suffix;
+
+                    $suffix++;
+                }
+
+                $profile->slug = $slug;
+            }
+        );
     }
 }

@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\MailFolderStatsController;
 use App\Http\Controllers\Api\MailPinController;
 use App\Http\Controllers\Api\MailTeamProfileController;
 use App\Http\Controllers\Api\PublicTeamController;
+use App\Http\Controllers\Api\PublicTeamMemberController;
 
 
 
@@ -83,6 +84,14 @@ Route::get(
 Route::get(
     '/team',
     PublicTeamController::class
+);
+
+Route::get(
+    '/team/{slug}',
+    PublicTeamMemberController::class
+)->where(
+    'slug',
+    '[a-z0-9-]+'
 );
 
 
